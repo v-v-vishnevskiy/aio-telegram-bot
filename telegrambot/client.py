@@ -1,7 +1,7 @@
 import aiohttp
 import logging
 
-from typing import Any, Dict, Optional
+from typing import Dict, Optional
 
 
 try:
@@ -12,32 +12,22 @@ except ModuleNotFoundError:
 logger = logging.getLogger(__name__)
 
 
-class TelegramBot:
+class Client:
     base_url = "https://api.telegram.org/bot"
 
     def __init__(self, token: str, **kwargs):
         self._url = self.base_url + f"{token}/"
 
-        self._session_kwargs = self._default_kwargs
-        self._session_kwargs.update(kwargs)
-
-        self._session: aiohttp.ClientSession = None
-
-    async def start(self):
-        self._session = await self._make_session()
-
-    async def stop(self):
-        await self._session.close()
-
-    @property
-    def _default_kwargs(self) -> Dict[str, Any]:
-        return {
+        session_kwargs = {
             "timeout": aiohttp.ClientTimeout(total=1),
             "json_serialize": dumps
         }
+        session_kwargs.update(kwargs)
 
-    async def _make_session(self) -> aiohttp.ClientSession:
-        return aiohttp.ClientSession(**self._session_kwargs)
+        self._session: aiohttp.ClientSession = aiohttp.ClientSession(**session_kwargs)
+
+    async def close(self):
+        await self._session.close()
 
     async def request(self, method: str, api: str, **kwargs) -> Optional[Dict]:
         url = self._url + api
