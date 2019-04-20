@@ -8,5 +8,5 @@ setup(
     author_email="v.v.vishnevskiy@gmail.com",
     license="MIT",
     packages=find_packages(),
-    install_requires=["aiohttp==3.5.4"],
+    install_requires=["aiohttp==3.5.4", "aiojobs==0.2.2"],
 )
