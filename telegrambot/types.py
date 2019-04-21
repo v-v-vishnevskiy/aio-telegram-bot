@@ -40,9 +40,9 @@ def get_by_priority():
     first = []
     second = []
 
-    for messate_type in MessageType:
-        if isinstance(messate_type.value, tuple):
-            first.append(messate_type)
+    for message_type in MessageType:
+        if isinstance(message_type.value, tuple):
+            first.append(message_type)
         else:
-            second.append(messate_type)
+            second.append(message_type)
     return first + second
