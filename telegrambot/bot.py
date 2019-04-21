@@ -1,4 +1,5 @@
 import asyncio
+import contextvars
 import logging
 from dataclasses import dataclass
 from typing import Callable, Union
@@ -29,6 +30,7 @@ class Bot:
         self._scheduler: aiojobs.Scheduler = None
         self._is_started = False
         self._update_id = 0
+        self.__chat_id = contextvars.ContextVar('chat_id')
 
     async def start(self, **kwargs):
         if self._is_started:
@@ -56,7 +58,7 @@ class Bot:
         self._handlers(message_type, rule)(handler)
 
     async def send_message(self, text: str, chat_id: int = None):
-        # TODO: получить chat_id, при котором была вызвана эта функция
+        chat_id = chat_id or self.__chat_id.get()
         await self.client.request("get", "sendMessage", params={"chat_id": chat_id, "text": text})
 
     async def _get_updates(self):
@@ -68,9 +70,14 @@ class Bot:
             data: Union[None, dict] = await self.client.request("get", "getUpdates", params=params)
             if data:
                 for result in data["result"]:
-                    handler = self._handlers.handler(result["message"])
-                    if handler:
-                        await self._scheduler.spawn(handler(Message(self, result, self._context)))
+                    if "message" in result:
+                        handler = self._handlers.handler(result["message"])
+                        if handler:
+                            await self._scheduler.spawn(self.__handler(handler, Message(self, result, self._context)))
                     self._update_id = max(result["update_id"], self._update_id)
                 self._update_id += 1 if data["result"] else 0
             await asyncio.sleep(0.1)
+
+    async def __handler(self, handler: Callable, message: Message):
+        self.__chat_id.set(message.raw["message"]["chat"]["id"])
+        await handler(message)

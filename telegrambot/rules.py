@@ -13,38 +13,64 @@ class Rule:
 
 
 class RegExp(Rule):
+    priority = 300
+
     def __init__(self, pattern: str):
         self._pattern = re.compile(pattern)
 
-    def __eq__(self, other: Union[str, "RegExp"]):
-        if isinstance(other, str):
-            return bool(self._pattern.match(other))
-        return self.__hash__() == hash(other)
+    def __eq__(self, other: Union[str, Rule]):
+        if isinstance(other, Rule):
+            return self.__hash__() == hash(other)
+        return bool(self._pattern.match(other))
 
     def __hash__(self):
         return hash(self._pattern)
 
 
-class TextEntity(Rule):
+class Text(Rule):
+    priority = 200
+
+    def __init__(self, text: str, to_lower: bool = True):
+        self._text = text.lower() if to_lower else text
+        self._to_lower = to_lower
+
+    def __eq__(self, other: Union[str, Rule]):
+        if isinstance(other, Rule):
+            return self.__hash__() == hash(other)
+        return self._text == (other.lower() if self._to_lower else other)
+
+    def __hash__(self):
+        return hash((self.__class__, self._text, self._to_lower))
+
+
+class Contains(Text):
+
+    def __eq__(self, other: Union[str, Rule]):
+        if isinstance(other, Rule):
+            return self.__hash__() == hash(other)
+        return self._text in (other.lower() if self._to_lower else other)
+
+    def __hash__(self):
+        return super().__hash__()
+
+
+class Pattern(Text):
+    priority = 100
     pattern = None
 
-    def __init__(self, entity: str):
-        if not self.pattern.match(entity):
+    def __init__(self, text: str, to_lower: bool = False):
+        if not self.pattern.match(text):
             raise RuleError(
                 f"The {self.__class__.__name__.lower()} should corresponds '{self.pattern.pattern}' pattern"
             )
-
-        self._entity = entity
-
-    def __eq__(self, other: str):
-        return self._entity == other
+        super().__init__(text, to_lower)
 
 
-class Command(TextEntity):
+class Command(Pattern):
     pattern = re.compile(r"^/[A-Za-z0-9_]+$")
 
 
-class Mention(TextEntity):
+class Mention(Pattern):
     pattern = re.compile(r"^@[A-Za-z0-9_]+$")
 
 
@@ -56,6 +82,8 @@ def prepare_rule(message_type: MessageType, rule: RuleType) -> RuleType:
         return Command(rule)
     elif message_type == MessageType.MENTION and isinstance(rule, str):
         return Mention(rule)
+    elif message_type == MessageType.TEXT and isinstance(rule, (str, int)):
+        return Text(str(rule))
     return rule
 
 

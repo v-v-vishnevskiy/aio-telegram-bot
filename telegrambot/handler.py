@@ -16,6 +16,7 @@ class Handlers:
         if not message_type:
             return
 
+        # TODO: проверять правила в порядке приоритета
         for rule, handler in reversed(self._handlers[message_type]):
             if is_match(rule, message_type, message):
                 break
@@ -26,6 +27,7 @@ class Handlers:
         return handler
 
     def __call__(self, message_type: MessageType, rule: RuleType = None):
+        """Add handler"""
         def decorator(handler):
             nonlocal rule, message_type
 
