@@ -60,4 +60,13 @@ def prepare_rule(message_type: MessageType, rule: RuleType) -> RuleType:
 
 
 def is_match(rule: RuleType, message_type: MessageType, message: dict) -> bool:
-    pass
+    if isinstance(message_type.value, tuple):
+        key, entity_key, _ = message_type.value
+        entity = message[entity_key][0]
+        offset = entity["offset"]
+        length = entity["length"]
+        value = message[key][offset:length]
+    else:
+        key = message_type.value
+        value = message[key]
+    return rule == value
