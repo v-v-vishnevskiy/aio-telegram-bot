@@ -57,3 +57,7 @@ def prepare_rule(message_type: MessageType, rule: RuleType) -> RuleType:
     elif message_type == MessageType.MENTION and isinstance(rule, str):
         return Mention(rule)
     return rule
+
+
+def is_match(rule: RuleType, message_type: MessageType, message: dict) -> bool:
+    pass

@@ -1,5 +1,6 @@
 from enum import Enum
 from functools import lru_cache
+from typing import Optional
 
 
 class MessageType(Enum):
@@ -46,3 +47,20 @@ def get_by_priority():
         else:
             second.append(message_type)
     return first + second
+
+
+def recognize_message_type(message: dict) -> Optional[MessageType]:
+    for m_type in get_by_priority():
+        entity_key = entity_type = None
+        if isinstance(m_type.value, tuple):
+            key, entity_key, entity_type = m_type.value
+        else:
+            key = m_type.value
+
+        if key in message:
+            if not entity_key:
+                return m_type
+            elif entity_key in message:
+                entity = message[entity_key][0]
+                if entity["offset"] == 0 and entity["type"] == entity_type:
+                    return m_type
