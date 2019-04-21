@@ -1,13 +1,14 @@
 import asyncio
 import logging
 from collections import defaultdict
-from typing import Coroutine, Dict
+from typing import Callable, Dict, List, Optional, Tuple
 
 import aiojobs
 
 from telegrambot.client import Client
 from telegrambot.errors import BotError
-from telegrambot.types import MessageType
+from telegrambot.rules import RuleType, prepare_rule
+from telegrambot.types import MessageType, get_by_priority
 
 logger = logging.getLogger(__name__)
 
@@ -19,9 +20,8 @@ class Bot:
         self._scheduler: aiojobs.Scheduler = None
         self._is_started = False
 
-        # TODO: заменить дикты на списки
-        self._default_handlers: Dict[MessageType, Coroutine] = {}
-        self._handlers: Dict[MessageType, Dict[str, Coroutine]] = defaultdict(dict)
+        self._default_handlers: Dict[MessageType, Callable] = {}
+        self._handlers: Dict[MessageType, List[Tuple[RuleType, Callable]]] = defaultdict(list)
 
         self._update_id = None
 
@@ -51,28 +51,27 @@ class Bot:
 
         self._update_id = None
 
-    def set_default_handler(self, message_type: MessageType, coro: Coroutine):
-        self._default_handlers[message_type] = coro
+    def add_handler(self, handler: Callable, message_type: MessageType, rule: RuleType = None):
+        if rule is None:
+            self._default_handlers[message_type] = handler
+            return
 
-    def add_handler(self, message_type: MessageType, rule: str, coro: Coroutine):
-        # TODO: rule скорее всего нужно сделать отдельным классом
+        rule = prepare_rule(message_type, rule)
 
-        if not (isinstance(rule, str) and rule):
-            raise BotError("The rule must be non empty string")
+        for accepted_rule, _ in self._handlers[message_type]:
+            if accepted_rule == rule:
+                raise BotError(f"The {message_type.name} handler with rule `{rule}` already in")
 
-        if message_type is MessageType.COMMAND:
-            if rule[0] != "/":
-                rule = "/" + rule
+        self._handlers[message_type].append((rule, handler))
 
-        if rule in self._handlers[message_type]:
-            raise BotError(f"The {message_type.name} handler with rule `{rule}` already in")
-
-        self._handlers[message_type][rule] = coro
+    async def send_message(self, message: str):
+        await self.client.request("get", "sendMessage", params={"chat_id": None, "text": message})
 
     async def _get_updates(self):
         while self._is_started:
             params = {}
             if self._update_id:
+                self._update_id += 1
                 params = {"offset": self._update_id}
 
             try:
@@ -81,9 +80,36 @@ class Bot:
                 for result in data["result"]:
                     self._update_id = max(result["update_id"], self._update_id)
                     message = result["message"]
-                    # TODO: find handler and run it
-                    # TODO: брать только последний handler из зарегистрированных
+
+                    message_type = self._message_type(message)
+                    if not message_type:
+                        continue
+
+                    handler = None
+                    for rule, handler in self._handlers[message_type]:
+                        pass
+                        # TODO: найти нужный обработчик
+                    if not handler:
+                        handler = self._default_handlers[message_type]
+                    if handler:
+                        await self._scheduler.spawn(handler(self, message))
 
             except asyncio.TimeoutError:
                 logger.exception("Timeout")
             await asyncio.sleep(0.1)
+
+    def _message_type(self, message: dict) -> Optional[MessageType]:
+        for message_type in get_by_priority():
+            entity_key = entity_type = None
+            if isinstance(message_type.value, tuple):
+                key, entity_key, entity_type = message_type.value
+            else:
+                key = message_type.value
+
+            if key in message:
+                if not entity_key:
+                    return message_type
+                elif entity_key in message:
+                    entity = message[entity_key][0]
+                    if entity["offset"] == 0 and entity["type"] == entity_type:
+                        return message_type
