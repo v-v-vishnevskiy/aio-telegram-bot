@@ -17,7 +17,7 @@ logger = logging.getLogger(__name__)
 @dataclass
 class Message:
     bot: "Bot"
-    message: dict
+    raw: dict
     context: dict
 
 
@@ -28,7 +28,7 @@ class Bot:
         self._context = context
         self._scheduler: aiojobs.Scheduler = None
         self._is_started = False
-        self._update_id = None
+        self._update_id = 0
 
     async def start(self, **kwargs):
         if self._is_started:
@@ -39,7 +39,7 @@ class Bot:
 
         self._is_started = True
         self._scheduler = await aiojobs.create_scheduler(**kwargs)
-        await self._scheduler.spawn(self._get_updates)
+        await self._scheduler.spawn(self._get_updates())
 
     async def stop(self):
         if not self._is_started:
@@ -50,7 +50,7 @@ class Bot:
         await self._scheduler.close()
         self._scheduler = None
 
-        self._update_id = None
+        self._update_id = 0
 
     def add_handler(self, handler: Callable, message_type: MessageType, rule: RuleType = None):
         self._handlers(message_type, rule)(handler)
@@ -65,15 +65,12 @@ class Bot:
             if self._update_id:
                 params = {"offset": self._update_id}
 
-            try:
-                data: dict = await self.client.request("get", "getUpdates", params=params)
+            data: dict = await self.client.request("get", "getUpdates", params=params)
 
-                for result in data["result"]:
-                    handler = self._handlers.handler(result["message"])
-                    if handler:
-                        await self._scheduler.spawn(handler(Message(self, result["message"], self._context)))
-                    self._update_id = max(result["update_id"], self._update_id)
-                self._update_id += 1
-            except asyncio.TimeoutError:
-                logger.exception("Timeout")
+            for result in data["result"]:
+                handler = self._handlers.handler(result["message"])
+                if handler:
+                    await self._scheduler.spawn(handler(Message(self, result, self._context)))
+                self._update_id = max(result["update_id"], self._update_id)
+            self._update_id += 1 if data["result"] else 0
             await asyncio.sleep(0.1)

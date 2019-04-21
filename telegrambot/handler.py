@@ -22,7 +22,7 @@ class Handlers:
         else:
             handler = None
         if not handler:
-            handler = self._default_handlers[message_type]
+            handler = self._default_handlers.get(message_type)
         return handler
 
     def __call__(self, message_type: MessageType, rule: RuleType = None):
