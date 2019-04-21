@@ -1,7 +1,7 @@
 import asyncio
 import logging
 from dataclasses import dataclass
-from typing import Callable
+from typing import Callable, Union
 
 import aiojobs
 
@@ -65,12 +65,12 @@ class Bot:
             if self._update_id:
                 params = {"offset": self._update_id}
 
-            data: dict = await self.client.request("get", "getUpdates", params=params)
-
-            for result in data["result"]:
-                handler = self._handlers.handler(result["message"])
-                if handler:
-                    await self._scheduler.spawn(handler(Message(self, result, self._context)))
-                self._update_id = max(result["update_id"], self._update_id)
-            self._update_id += 1 if data["result"] else 0
+            data: Union[None, dict] = await self.client.request("get", "getUpdates", params=params)
+            if data:
+                for result in data["result"]:
+                    handler = self._handlers.handler(result["message"])
+                    if handler:
+                        await self._scheduler.spawn(handler(Message(self, result, self._context)))
+                    self._update_id = max(result["update_id"], self._update_id)
+                self._update_id += 1 if data["result"] else 0
             await asyncio.sleep(0.1)
