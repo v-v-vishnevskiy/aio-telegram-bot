@@ -54,4 +54,6 @@ RuleType = Union[Rule, str, int]
 def prepare_rule(message_type: MessageType, rule: RuleType) -> RuleType:
     if message_type == MessageType.COMMAND and isinstance(rule, str):
         return Command(rule)
+    elif message_type == MessageType.MENTION and isinstance(rule, str):
+        return Mention(rule)
     return rule
