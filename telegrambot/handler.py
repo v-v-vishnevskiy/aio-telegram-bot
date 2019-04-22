@@ -8,6 +8,7 @@ from telegrambot.types import MessageType, recognize_message_type
 
 class Handlers:
     def __init__(self):
+        self._default_handler: Optional[Callable] = None
         self._default_handlers: Dict[MessageType, Callable] = {}
         self._handlers: Dict[MessageType, List[Tuple[RuleType, Callable]]] = defaultdict(list)
 
@@ -22,14 +23,16 @@ class Handlers:
                 break
         else:
             handler = None
-        if not handler:
-            handler = self._default_handlers.get(message_type)
-        return handler
+        return handler or self._default_handlers.get(message_type, self._default_handler)
 
-    def __call__(self, message_type: MessageType, rule: RuleType = None):
+    def __call__(self, message_type: MessageType = None, rule: RuleType = None):
         """Add handler"""
         def decorator(handler):
             nonlocal rule, message_type
+
+            if message_type is None:
+                self._default_handler = handler
+                return
 
             if rule is None:
                 self._default_handlers[message_type] = handler
