@@ -27,26 +27,26 @@ class RegExp(Rule):
         return hash(self._pattern)
 
     def __repr__(self):
-        return f"RegExp({self._pattern.pattern})"
+        return f'RegExp("{self._pattern.pattern}")'
 
 
 class Text(Rule):
     priority = 200
 
-    def __init__(self, text: str, to_lower: bool = True):
-        self._text = text.lower() if to_lower else text
-        self._to_lower = to_lower
+    def __init__(self, text: str, insensitive: bool = True):
+        self._text = text.lower() if insensitive else text
+        self._insensitive = insensitive
 
     def __eq__(self, other: Union[str, Rule]):
         if isinstance(other, Rule):
             return self.__hash__() == hash(other)
-        return self._text == (other.lower() if self._to_lower else other)
+        return self._text == (other.lower() if self._insensitive else other)
 
     def __hash__(self):
-        return hash((self.__class__, self._text, self._to_lower))
+        return hash((self.__class__, self._text, self._insensitive))
 
     def __repr__(self):
-        return f"{self.__class__.__name__}({self._text}, {self._to_lower})"
+        return f'{self.__class__.__name__}("{self._text}", {self._insensitive})'
 
 
 class Contains(Text):
@@ -55,7 +55,7 @@ class Contains(Text):
     def __eq__(self, other: Union[str, Rule]):
         if isinstance(other, Rule):
             return self.__hash__() == hash(other)
-        return self._text in (other.lower() if self._to_lower else other)
+        return self._text in (other.lower() if self._insensitive else other)
 
     def __hash__(self):
         return super().__hash__()

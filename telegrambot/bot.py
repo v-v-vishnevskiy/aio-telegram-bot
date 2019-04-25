@@ -75,9 +75,6 @@ class Bot:
                         await self._scheduler.spawn(
                             self.__handler(handler, Message(self, raw, self._context, incoming, message_type))
                         )
-                    else:
-                        print("HANDLER NOT FOUND")
-                        print(incoming, message_type, raw)
                     self._update_id = max(raw["update_id"], self._update_id)
                 self._update_id += 1 if data["result"] else 0
             await asyncio.sleep(0.1)
