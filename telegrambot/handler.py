@@ -1,55 +1,86 @@
 from collections import defaultdict
-from typing import Callable, Dict, List, Optional, Tuple
+from time import monotonic
+from typing import Callable, Optional
 
-from telegrambot.errors import BotError
-from telegrambot.rules import RuleType, is_match, prepare_rule
-from telegrambot.types import MessageType, recognize_message_type
+from telegrambot.errors import HandlerError
+from telegrambot.rules import _RuleType, _is_match, _prepare_rule
+from telegrambot.types import Incoming, MessageType
+
+
+class Handler:
+    def __init__(self, handler: Callable, pause: int = None):
+        if pause is not None and pause < 1:
+            raise ValueError(f"The `pause` must be greater or equal 1")
+
+        self.name = handler.__name__
+        self.last_call = None
+        self.pause = pause
+        self._handler = handler
+
+    async def __call__(self, *args, **kwargs):
+        if self.last_call is None or self.pause is None or (monotonic() - self.last_call >= self.pause):
+            await self._handler(*args, **kwargs)
+            self.last_call = monotonic()
+
+    def __repr__(self):
+        return f"Handler({self.name}, {self.pause})"
 
 
 class Handlers:
-    def __init__(self):
-        self._default_handler: Optional[Callable] = None
-        self._default_handlers: Dict[MessageType, Callable] = {}
-        self._handlers: Dict[MessageType, List[Tuple[RuleType, Callable]]] = defaultdict(list)
+    def __init__(self, handler_cls: type(Handler) = Handler):
+        self._handler_cls = handler_cls
+        self._handlers = defaultdict(lambda: defaultdict(list))
 
-    def handler(self, message: dict) -> Optional[Callable]:
-        message_type = recognize_message_type(message)
-        if not message_type:
-            return
+    def get(self, incoming: Incoming, message_type: Optional[MessageType], raw: dict) -> Optional[Handler]:
+        groups = (
+            self._handlers[incoming][message_type],
+            self._handlers[None][message_type],
+            self._handlers[incoming][None],
+            self._handlers[None][None]
+        )
 
-        # TODO: проверять правила в порядке приоритета
-        for rule, handler in reversed(self._handlers[message_type]):
-            if is_match(rule, message_type, message):
-                break
-        else:
-            handler = None
-        return handler or self._default_handlers.get(message_type, self._default_handler)
+        for handlers in groups:
+            for rule, handler in handlers:
+                if _is_match(rule, incoming, message_type, raw):
+                    return handler
 
-    def __call__(self, message_type: MessageType = None, rule: RuleType = None):
+    def add(
+            self,
+            incoming: Incoming = None,
+            message_type: MessageType = None,
+            rule: _RuleType = None,
+            pause: int = None
+    ):
         """Add handler"""
+
+        if incoming is not None and not incoming.is_message_or_post:
+            if message_type is not None:
+                raise HandlerError("The `message_type` allowed only for message or post incoming")
+            elif rule is not None:
+                raise HandlerError("The `pattern` allowed only for message or post incoming")
+
+        if rule is not None:
+            rule = _prepare_rule(message_type, rule)
+
         def decorator(handler):
-            nonlocal rule, message_type
+            for accepted_pattern, _ in self._handlers[incoming][message_type]:
+                if accepted_pattern == rule:
+                    raise HandlerError(
+                        f"The handler with incoming={incoming}, message_type={message_type} \
+                        and rule `{rule}` already in"
+                    )
 
-            if message_type is None:
-                self._default_handler = handler
-                return
-
-            if rule is None:
-                self._default_handlers[message_type] = handler
-                return
-
-            rule = prepare_rule(message_type, rule)
-
-            for accepted_rule, _ in self._handlers[message_type]:
-                if accepted_rule == rule:
-                    raise BotError(f"The {message_type.name} handler with rule `{rule}` already in")
-
-            self._handlers[message_type].append((rule, handler))
+            self._handlers[incoming][message_type].append((rule, self._handler_cls(handler, pause)))
+            # TODO: sort by priority:
+            # - Exact match [Text, str, int]
+            # - Contains (нужен ли этот шаблон?)
+            # - RegExp
+            # - None
         return decorator
 
-    def __bool__(self):
-        len_handlers = 0
-        for handlers in self._handlers.values():
-            len_handlers = len(handlers)
-
-        return bool(self._default_handlers or len_handlers)
+    def __len__(self):
+        result = 0
+        for incoming_handlers in self._handlers.values():
+            for message_type_handlers in incoming_handlers.values():
+                result = len(message_type_handlers)
+        return result

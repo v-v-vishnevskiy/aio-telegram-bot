@@ -1,6 +1,23 @@
 from enum import Enum
 from functools import lru_cache
-from typing import Optional
+from typing import List, Optional, Tuple
+
+
+class Incoming(Enum):
+    """Represents the type of incoming message"""
+    NEW_MESSAGE = "message"
+    EDITED_MESSAGE = "edited_message"
+    CHANNEL_POST = "channel_post"
+    EDITED_CHANNEL_POST = "edited_channel_post"
+
+    @property
+    def is_message_or_post(self):
+        return self.name in (
+            self.NEW_MESSAGE.name,
+            self.EDITED_MESSAGE.name,
+            self.CHANNEL_POST.name,
+            self.EDITED_CHANNEL_POST.name
+        )
 
 
 class MessageType(Enum):
@@ -35,9 +52,13 @@ class MessageType(Enum):
     VOICE = "voice"
     VIDEO_NOTE = "video_note"
 
+    @property
+    def has_entity(self):
+        return isinstance(self.value, tuple)
+
 
 @lru_cache(maxsize=1)
-def get_by_priority():
+def _get_by_priority():
     first = []
     second = []
 
@@ -49,18 +70,31 @@ def get_by_priority():
     return first + second
 
 
-def recognize_message_type(message: dict) -> Optional[MessageType]:
-    for m_type in get_by_priority():
+def _recognize_incoming(raw: dict) -> Optional[Incoming]:
+    for incoming in Incoming:
+        if incoming.value in raw:
+            return incoming
+
+
+def _recognize_type(raw: dict) -> Tuple[Optional[Incoming], Optional[MessageType]]:
+    incoming = _recognize_incoming(raw)
+    if incoming is None:
+        return None, None
+    elif not incoming.is_message_or_post:
+        return incoming, None
+    raw = raw[incoming.value]
+
+    for m_type in _get_by_priority():
         entity_key = entity_type = None
         if isinstance(m_type.value, tuple):
             key, entity_key, entity_type = m_type.value
         else:
             key = m_type.value
 
-        if key in message:
+        if key in raw:
             if not entity_key:
-                return m_type
-            elif entity_key in message:
-                entity = message[entity_key][0]
+                return incoming, m_type
+            elif entity_key in raw:
+                entity = raw[entity_key][0]
                 if entity["offset"] == 0 and entity["type"] == entity_type:
-                    return m_type
+                    return incoming, m_type

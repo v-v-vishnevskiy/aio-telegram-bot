@@ -1,8 +1,8 @@
 import re
-from typing import Union
+from typing import Optional, Union
 
 from telegrambot.errors import RuleError
-from telegrambot.types import MessageType
+from telegrambot.types import Incoming, MessageType
 
 
 class Rule:
@@ -13,7 +13,7 @@ class Rule:
 
 
 class RegExp(Rule):
-    priority = 300
+    priority = 400
 
     def __init__(self, pattern: str):
         self._pattern = re.compile(pattern)
@@ -25,6 +25,9 @@ class RegExp(Rule):
 
     def __hash__(self):
         return hash(self._pattern)
+
+    def __repr__(self):
+        return f"RegExp({self._pattern.pattern})"
 
 
 class Text(Rule):
@@ -42,8 +45,12 @@ class Text(Rule):
     def __hash__(self):
         return hash((self.__class__, self._text, self._to_lower))
 
+    def __repr__(self):
+        return f"{self.__class__.__name__}({self._text}, {self._to_lower})"
+
 
 class Contains(Text):
+    priority = 300
 
     def __eq__(self, other: Union[str, Rule]):
         if isinstance(other, Rule):
@@ -74,10 +81,10 @@ class Mention(Pattern):
     pattern = re.compile(r"^@[A-Za-z0-9_]+$")
 
 
-RuleType = Union[Rule, str, int]
+_RuleType = Union[Rule, str, int]
 
 
-def prepare_rule(message_type: MessageType, rule: RuleType) -> RuleType:
+def _prepare_rule(message_type: Optional[MessageType], rule: _RuleType) -> _RuleType:
     if message_type == MessageType.COMMAND and isinstance(rule, str):
         return Command(rule)
     elif message_type == MessageType.MENTION and isinstance(rule, str):
@@ -87,14 +94,21 @@ def prepare_rule(message_type: MessageType, rule: RuleType) -> RuleType:
     return rule
 
 
-def is_match(rule: RuleType, message_type: MessageType, message: dict) -> bool:
-    if isinstance(message_type.value, tuple):
-        key, entity_key, _ = message_type.value
-        entity = message[entity_key][0]
-        offset = entity["offset"]
-        length = entity["length"]
-        value = message[key][offset:length]
-    else:
-        key = message_type.value
-        value = message[key]
-    return rule == value
+def _is_match(rule: Optional[_RuleType], incoming: Incoming, message_type: MessageType, raw: dict) -> bool:
+    if rule is None:
+        return True
+    elif incoming.is_message_or_post:
+        raw = raw[incoming.value]
+        if message_type.has_entity:
+            key, entity_key, _ = message_type.value
+            entity = raw[entity_key][0]
+            offset = entity["offset"]
+            length = entity["length"]
+            value = raw[key][offset:length]
+        else:
+            key = message_type.value
+            value = raw[key]
+        return rule == value
+
+    # TODO: check other incoming types
+    return False
