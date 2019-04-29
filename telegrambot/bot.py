@@ -23,8 +23,8 @@ class Message:
 class Bot:
     def __init__(self, client: Client, handlers: Handlers = None, context: dict = None):
         self.client = client
-        self._handlers: Handlers = handlers or Handlers()
-        self._context = context
+        self.handlers: Handlers = handlers or Handlers()
+        self.context = context or {}
         self.__scheduler: Optional[aiojobs.Scheduler] = None
         self.__closed = True
         self.__update_id = 0
@@ -34,7 +34,7 @@ class Bot:
         if self.__closed is False:
             return
 
-        if len(self._handlers) == 0:
+        if len(self.handlers) == 0:
             raise BotError("Can't initialize with no one handler")
 
         self.__closed = False
@@ -54,7 +54,7 @@ class Bot:
         self.__update_id = 0
 
     def add_handler(self, handler: Callable, *args, **kwargs):
-        self._handlers.add(*args, **kwargs)(handler)
+        self.handlers.add(*args, **kwargs)(handler)
 
     async def send_text(self, text: str, chat_id: int = None):
         chat_id = chat_id or self.__chat_id.get()
@@ -65,11 +65,11 @@ class Bot:
             raise RuntimeError("The bot isn't initialize")
 
         incoming, message_type = _recognize_type(data)
-        handler = self._handlers.get(incoming, message_type, data)
+        handler = self.handlers.get(incoming, message_type, data)
         if handler:
             # TODO: не спаунить, если хэндлер не нужно запускать
             await self.__scheduler.spawn(
-                self.__handler(handler, Message(self, data, self._context, incoming, message_type))
+                self.__handler(handler, Message(self, data, self.context, incoming, message_type))
             )
 
     async def _get_updates(self, interval: float):
