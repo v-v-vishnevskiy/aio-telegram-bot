@@ -1,6 +1,13 @@
 from enum import Enum
 from functools import lru_cache
-from typing import List, Optional, Tuple
+from typing import Optional, Tuple
+
+
+class ChatType(Enum):
+    PRIVATE = "private"
+    GROUP = "group"
+    SUPERGROUP = "supergroup"
+    CHANNEL = "channel"
 
 
 class Incoming(Enum):
@@ -76,13 +83,15 @@ def _recognize_incoming(raw: dict) -> Optional[Incoming]:
             return incoming
 
 
-def _recognize_type(raw: dict) -> Tuple[Optional[Incoming], Optional[MessageType]]:
+def _recognize_type(raw: dict) -> Tuple[Optional[ChatType], Optional[Incoming], Optional[MessageType]]:
     incoming = _recognize_incoming(raw)
     if incoming is None:
-        return None, None
+        return None, None, None
     elif not incoming.is_message_or_post:
-        return incoming, None
+        return None, incoming, None
     raw = raw[incoming.value]
+
+    chat_type = ChatType(raw["chat"]["type"])
 
     for m_type in _get_by_priority():
         entity_key = entity_type = None
@@ -93,8 +102,8 @@ def _recognize_type(raw: dict) -> Tuple[Optional[Incoming], Optional[MessageType
 
         if key in raw:
             if not entity_key:
-                return incoming, m_type
+                return chat_type, incoming, m_type
             elif entity_key in raw:
                 entity = raw[entity_key][0]
                 if entity["offset"] == 0 and entity["type"] == entity_type:
-                    return incoming, m_type
+                    return chat_type, incoming, m_type

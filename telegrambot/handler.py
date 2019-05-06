@@ -4,7 +4,7 @@ from typing import Callable, Optional
 
 from telegrambot.errors import HandlerError
 from telegrambot.rules import _RuleType, _is_match, _prepare_rule
-from telegrambot.types import Incoming, MessageType
+from telegrambot.types import ChatType, Incoming, MessageType
 
 
 class Handler:
@@ -29,23 +29,25 @@ class Handler:
 class Handlers:
     def __init__(self, handler_cls: type(Handler) = Handler):
         self._handler_cls = handler_cls
-        self._handlers = defaultdict(lambda: defaultdict(list))
+        self._handlers = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
 
-    def get(self, incoming: Incoming, message_type: Optional[MessageType], raw: dict) -> Optional[Handler]:
-        groups = (
-            self._handlers[incoming][message_type],
-            self._handlers[None][message_type],
-            self._handlers[incoming][None],
-            self._handlers[None][None]
-        )
-
-        for handlers in groups:
-            for rule, handler in handlers:
-                if _is_match(rule, incoming, message_type, raw):
-                    return handler
+    def get(
+            self,
+            chat_type: ChatType,
+            incoming: Incoming,
+            message_type: Optional[MessageType],
+            raw: dict
+    ) -> Optional[Handler]:
+        for _chat_type in (chat_type, None):
+            for _incoming in (incoming, None):
+                for _message_type in (message_type, None):
+                    for rule, handler in self._handlers[_chat_type][_incoming][_message_type] or []:
+                        if _is_match(rule, incoming, message_type, raw):
+                            return handler
 
     def add(
             self,
+            chat_type: ChatType = None,
             incoming: Incoming = None,
             message_type: MessageType = None,
             rule: _RuleType = None,
@@ -63,24 +65,21 @@ class Handlers:
             rule = _prepare_rule(message_type, rule)
 
         def decorator(handler):
-            for accepted_pattern, _ in self._handlers[incoming][message_type]:
+            for accepted_pattern, _ in self._handlers[chat_type][incoming][message_type]:
                 if accepted_pattern == rule:
                     raise HandlerError(
-                        f"The handler with incoming={incoming}, message_type={message_type} \
-                        and rule `{rule}` already in"
+                        f"The handler with chat_type={chat_type}, incoming={incoming}, message_type={message_type} \
+                        and rule `{rule}` already in."
                     )
 
-            self._handlers[incoming][message_type].append((rule, self._handler_cls(handler, pause)))
+            self._handlers[chat_type][incoming][message_type].append((rule, self._handler_cls(handler, pause)))
             # TODO: sort by priority:
             # - Exact match [Text, str, int]
             # - Contains (нужен ли этот шаблон?)
             # - RegExp
             # - None
+            return handler
         return decorator
 
-    def __len__(self):
-        result = 0
-        for incoming_handlers in self._handlers.values():
-            for message_type_handlers in incoming_handlers.values():
-                result = len(message_type_handlers)
-        return result
+    def __bool__(self) -> bool:
+        return bool(self._handlers)

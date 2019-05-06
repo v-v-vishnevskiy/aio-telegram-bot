@@ -34,7 +34,7 @@ class Bot:
         if self.__closed is False:
             return
 
-        if len(self.handlers) == 0:
+        if not self.handlers:
             raise BotError("Can't initialize with no one handler")
 
         self.__closed = False
@@ -62,10 +62,10 @@ class Bot:
 
     async def process_update(self, data: dict):
         if self.__closed is True:
-            raise RuntimeError("The bot isn't initialize")
+            raise RuntimeError("The bot isn't initialized")
 
-        incoming, message_type = _recognize_type(data)
-        handler = self.handlers.get(incoming, message_type, data)
+        chat_type, incoming, message_type = _recognize_type(data)
+        handler = self.handlers.get(chat_type, incoming, message_type, data)
         if handler:
             # TODO: не спаунить, если хэндлер не нужно запускать
             await self.__scheduler.spawn(
