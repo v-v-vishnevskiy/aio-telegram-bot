@@ -1,5 +1,4 @@
 from collections import defaultdict
-from time import monotonic
 from typing import Callable, Optional
 
 from telegrambot.errors import HandlerError
@@ -8,22 +7,29 @@ from telegrambot.types import ChatType, Incoming, MessageType
 
 
 class Handler:
-    def __init__(self, handler: Callable, pause: int = None):
-        if pause is not None and pause < 1:
-            raise ValueError(f"The `pause` must be greater or equal 1")
-
+    def __init__(
+            self,
+            handler: Callable,
+            chat_type: ChatType = None,
+            incoming: Incoming = None,
+            message_type: MessageType = None,
+            rule: _RuleType = None
+    ):
         self.name = handler.__name__
-        self.last_call = None
-        self.pause = pause
+        self.chat_type = chat_type
+        self.incoming = incoming
+        self.message_type = message_type
+        self.rule = rule
         self._handler = handler
 
     async def __call__(self, *args, **kwargs):
-        if self.last_call is None or self.pause is None or (monotonic() - self.last_call >= self.pause):
-            await self._handler(*args, **kwargs)
-            self.last_call = monotonic()
+        await self._handler(*args, **kwargs)
+
+    def __hash__(self):
+        return hash((self.name, self.chat_type, self.incoming, self.message_type, self.rule))
 
     def __repr__(self):
-        return f"Handler({self.name}, {self.pause})"
+        return f"Handler({self.name}, {self.chat_type}, {self.incoming}, {self.message_type}, {self.rule})"
 
 
 class Handlers:
@@ -50,8 +56,7 @@ class Handlers:
             chat_type: ChatType = None,
             incoming: Incoming = None,
             message_type: MessageType = None,
-            rule: _RuleType = None,
-            pause: int = None
+            rule: _RuleType = None
     ):
         """Add handler"""
 
@@ -72,7 +77,12 @@ class Handlers:
                         and rule `{rule}` already in."
                     )
 
-            self._handlers[chat_type][incoming][message_type].append((rule, self._handler_cls(handler, pause)))
+            self._handlers[chat_type][incoming][message_type].append(
+                (
+                    rule,
+                    self._handler_cls(handler, chat_type, incoming, message_type, rule)
+                )
+            )
             # TODO: sort by priority:
             # - Exact match [Text, str, int]
             # - Contains (нужен ли этот шаблон?)

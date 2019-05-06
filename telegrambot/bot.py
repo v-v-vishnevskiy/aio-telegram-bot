@@ -8,7 +8,7 @@ import aiojobs
 from telegrambot.client import Client
 from telegrambot.errors import BotError
 from telegrambot.handler import Handler, Handlers
-from telegrambot.types import Incoming, MessageType, _recognize_type
+from telegrambot.types import ChatType, Incoming, MessageType, _recognize_type
 
 
 @dataclass
@@ -16,6 +16,8 @@ class Message:
     bot: "Bot"
     raw: dict
     context: dict
+    handler: Handler
+    chat_type: Optional[ChatType]
     incoming: Optional[Incoming]
     message_type: Optional[MessageType]
 
@@ -67,9 +69,8 @@ class Bot:
         chat_type, incoming, message_type = _recognize_type(data)
         handler = self.handlers.get(chat_type, incoming, message_type, data)
         if handler:
-            # TODO: не спаунить, если хэндлер не нужно запускать
             await self.__scheduler.spawn(
-                self.__handler(handler, Message(self, data, self.context, incoming, message_type))
+                self.__handler(handler, Message(self, data, self.context, handler, chat_type, incoming, message_type))
             )
 
     async def _get_updates(self, interval: float):
