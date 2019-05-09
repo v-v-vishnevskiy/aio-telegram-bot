@@ -1,7 +1,7 @@
 import aiohttp
 import logging
 
-from typing import Dict, Optional
+from typing import Dict, Optional, Union
 
 
 try:
@@ -28,6 +28,24 @@ class Client:
 
     async def close(self):
         await self._session.close()
+
+    async def get_updates(
+            self,
+            offset: Optional[int] = None,
+            limit: Optional[int] = None,
+            timeout: Optional[int] = None
+    ):
+        params = {}
+        if offset:
+            params["offset"] = offset
+        if limit:
+            params["limit"] = limit
+        if timeout:
+            params["timeout"] = timeout
+        return await self.request("get", "getUpdates", params=params)
+
+    async def send_message(self, text: str, chat_id: Union[int, str]):
+        await self.request("get", "sendMessage", params={"chat_id": chat_id, "text": text})
 
     async def request(self, method: str, api: str, **kwargs) -> Optional[Dict]:
         url = self._url + api
