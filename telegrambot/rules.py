@@ -27,7 +27,7 @@ class RegExp(Rule):
         return hash(self._pattern)
 
     def __repr__(self):
-        return f'RegExp("{self._pattern.pattern}")'
+        return 'RegExp("{}")'.format(self._pattern.pattern)
 
 
 class Text(Rule):
@@ -46,7 +46,7 @@ class Text(Rule):
         return hash((self.__class__, self._text, self._insensitive))
 
     def __repr__(self):
-        return f'{self.__class__.__name__}("{self._text}", {self._insensitive})'
+        return '{}("{}", {})'.format(self.__class__.__name__, self._text, self._insensitive)
 
 
 class Contains(Text):
@@ -68,7 +68,7 @@ class Pattern(Text):
     def __init__(self, text: str, to_lower: bool = False):
         if not self.pattern.match(text):
             raise RuleError(
-                f"The {self.__class__.__name__.lower()} should corresponds '{self.pattern.pattern}' pattern"
+                "The {} should corresponds '{}' pattern".format(self.__class__.__name__.lower(), self.pattern.pattern)
             )
         super().__init__(text, to_lower)
 

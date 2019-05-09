@@ -6,7 +6,7 @@ from typing import Dict, Optional
 
 try:
     from ujson import dumps, loads
-except ModuleNotFoundError:
+except ImportError:
     from json import dumps, loads
 
 logger = logging.getLogger(__name__)
@@ -16,7 +16,7 @@ class Client:
     base_url = "https://api.telegram.org/bot"
 
     def __init__(self, token: str, **kwargs):
-        self._url = self.base_url + f"{token}/"
+        self._url = "{}{}/".format(self.base_url, token)
 
         session_kwargs = {
             "timeout": aiohttp.ClientTimeout(total=1),
@@ -24,7 +24,7 @@ class Client:
         }
         session_kwargs.update(kwargs)
 
-        self._session: aiohttp.ClientSession = aiohttp.ClientSession(**session_kwargs)
+        self._session = aiohttp.ClientSession(**session_kwargs)
 
     async def close(self):
         await self._session.close()
@@ -40,7 +40,7 @@ class Client:
                 else:
                     logger.error("Unsuccessful request", extra=data)
             else:
-                logger.error(f"Status: {response.status}", extra=data)
+                logger.error("Status: {}".format(response.status), extra=data)
                 if response.status >= 500:
                     raise aiohttp.ClientResponseError(
                         response.request_info,

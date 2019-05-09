@@ -29,7 +29,9 @@ class Handler:
         return hash((self.name, self.chat_type, self.incoming, self.message_type, self.rule))
 
     def __repr__(self):
-        return f"Handler({self.name}, {self.chat_type}, {self.incoming}, {self.message_type}, {self.rule})"
+        return "Handler({}, {}, {}, {}, {})".format(
+            self.name, self.chat_type, self.incoming, self.message_type, self.rule
+        )
 
 
 class Handlers:
@@ -73,8 +75,9 @@ class Handlers:
             for accepted_pattern, _ in self._handlers[chat_type][incoming][message_type]:
                 if accepted_pattern == rule:
                     raise HandlerError(
-                        f"The handler with chat_type={chat_type}, incoming={incoming}, message_type={message_type} \
-                        and rule `{rule}` already in."
+                        "The handler with chat_type={}, incoming={}, message_type={} and rule `{}` already in.".format(
+                            chat_type, incoming, message_type, rule
+                        )
                     )
 
             self._handlers[chat_type][incoming][message_type].append(
