@@ -6,6 +6,7 @@ import aiojobs
 from telegrambot.client import Client
 from telegrambot.errors import BotError
 from telegrambot.handler import Handlers
+from telegrambot.middleware import Middlewares
 from telegrambot.types import ChatType, Incoming, MessageType, _recognize_type
 
 
@@ -41,6 +42,7 @@ class Bot:
     def __init__(self, client: Client, handlers: Handlers = None):
         self.client = client
         self.handlers = handlers or Handlers()
+        self.middlewares = Middlewares()
         self.__scheduler = None
         self.__closed = True
         self.__update_id = 0
@@ -78,7 +80,9 @@ class Bot:
 
         chat_type, incoming, message_type = _recognize_type(data)
         handler = self.handlers.get(chat_type, incoming, message_type, data)
-        await self.__scheduler.spawn(handler(Message(self.client, data, chat_type, incoming, message_type)))
+        await self.__scheduler.spawn(
+            self.middlewares(Message(self.client, data, chat_type, incoming, message_type), handler)
+        )
 
     async def _get_updates(self, interval: float):
         while self.__closed is False:
