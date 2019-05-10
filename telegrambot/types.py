@@ -3,7 +3,7 @@ from functools import lru_cache
 from typing import Optional, Tuple
 
 
-class ChatType(Enum):
+class Chat(Enum):
     PRIVATE = "private"
     GROUP = "group"
     SUPERGROUP = "supergroup"
@@ -27,7 +27,7 @@ class Incoming(Enum):
         )
 
 
-class MessageType(Enum):
+class Content(Enum):
     ANIMATION = "animation"
     AUDIO = "audio"
     CODE = ("text", "entities", "code")
@@ -69,11 +69,11 @@ def _get_by_priority():
     first = []
     second = []
 
-    for message_type in MessageType:
-        if isinstance(message_type.value, tuple):
-            first.append(message_type)
+    for content_type in Content:
+        if isinstance(content_type.value, tuple):
+            first.append(content_type)
         else:
-            second.append(message_type)
+            second.append(content_type)
     return first + second
 
 
@@ -83,7 +83,7 @@ def _recognize_incoming(raw: dict) -> Optional[Incoming]:
             return incoming
 
 
-def _recognize_type(raw: dict) -> Tuple[Optional[ChatType], Optional[Incoming], Optional[MessageType]]:
+def _recognize_type(raw: dict) -> Tuple[Optional[Chat], Optional[Incoming], Optional[Content]]:
     incoming = _recognize_incoming(raw)
     if incoming is None:
         return None, None, None
@@ -91,7 +91,7 @@ def _recognize_type(raw: dict) -> Tuple[Optional[ChatType], Optional[Incoming], 
         return None, incoming, None
     raw = raw[incoming.value]
 
-    chat_type = ChatType(raw["chat"]["type"])
+    chat_type = Chat(raw["chat"]["type"])
 
     for m_type in _get_by_priority():
         entity_key = entity_type = None

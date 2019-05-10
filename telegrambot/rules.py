@@ -2,7 +2,7 @@ import re
 from typing import Optional, Union
 
 from telegrambot.errors import RuleError
-from telegrambot.types import Incoming, MessageType
+from telegrambot.types import Incoming, Content
 
 
 class Rule:
@@ -81,29 +81,29 @@ class Mention(Pattern):
 _RuleType = Union[Rule, str, int]
 
 
-def _prepare_rule(message_type: Optional[MessageType], rule: _RuleType) -> _RuleType:
-    if message_type == MessageType.COMMAND and isinstance(rule, str):
+def _prepare_rule(content_type: Optional[Content], rule: _RuleType) -> _RuleType:
+    if content_type == Content.COMMAND and isinstance(rule, str):
         return Command(rule)
-    elif message_type == MessageType.MENTION and isinstance(rule, str):
+    elif content_type == Content.MENTION and isinstance(rule, str):
         return Mention(rule)
-    elif message_type == MessageType.TEXT and isinstance(rule, (str, int)):
+    elif content_type == Content.TEXT and isinstance(rule, (str, int)):
         return Text(str(rule))
     return rule
 
 
-def _is_match(rule: Optional[_RuleType], incoming: Incoming, message_type: MessageType, raw: dict) -> bool:
+def _is_match(rule: Optional[_RuleType], incoming: Incoming, content_type: Content, raw: dict) -> bool:
     if rule is None:
         return True
     elif incoming.is_message_or_post:
         raw = raw[incoming.value]
-        if message_type.has_entity:
-            key, entity_key, _ = message_type.value
+        if content_type.has_entity:
+            key, entity_key, _ = content_type.value
             entity = raw[entity_key][0]
             offset = entity["offset"]
             length = entity["length"]
             value = raw[key][offset:length]
         else:
-            key = message_type.value
+            key = content_type.value
             value = raw[key]
         return rule == value
 

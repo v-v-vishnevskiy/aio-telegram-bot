@@ -7,7 +7,7 @@ from telegrambot.client import Client
 from telegrambot.errors import BotError
 from telegrambot.handler import Handlers
 from telegrambot.middleware import Middlewares
-from telegrambot.types import ChatType, Incoming, MessageType, _recognize_type
+from telegrambot.types import Chat, Incoming, Content, _recognize_type
 
 
 class Message:
@@ -15,15 +15,15 @@ class Message:
             self,
             client: Client,
             raw: dict,
-            chat_type: Optional[ChatType],
+            chat_type: Optional[Chat],
             incoming: Optional[Incoming],
-            message_type: Optional[MessageType]
+            content_type: Optional[Content]
     ):
         self.__client = client
         self.raw = raw
         self.chat_type = chat_type
         self.incoming = incoming
-        self.message_type = message_type
+        self.content_type = content_type
 
         if incoming is not None and incoming.is_message_or_post:
             self.__chat_id = raw[incoming.value]["chat"]["id"]
@@ -78,10 +78,10 @@ class Bot:
         if self.__closed is True:
             raise RuntimeError("The bot isn't initialized")
 
-        chat_type, incoming, message_type = _recognize_type(data)
-        handler = self.handlers.get(chat_type, incoming, message_type, data)
+        chat_type, incoming, content_type = _recognize_type(data)
+        handler = self.handlers.get(chat_type, incoming, content_type, data)
         await self.__scheduler.spawn(
-            self.middlewares(Message(self.client, data, chat_type, incoming, message_type), handler)
+            self.middlewares(Message(self.client, data, chat_type, incoming, content_type), handler)
         )
 
     async def _get_updates(self, interval: float):
