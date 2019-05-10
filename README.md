@@ -6,6 +6,7 @@ A framework to build your own Telegram Bot over [API](https://core.telegram.org/
 - Python >= 3.5.3
 - aiohttp == 3.5.4
 - aiojobs == 0.2.2
+- usjon (_Optional_)
 
 
 ## License
