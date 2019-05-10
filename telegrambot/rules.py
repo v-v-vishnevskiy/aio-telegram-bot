@@ -6,10 +6,7 @@ from telegrambot.types import Incoming, MessageType
 
 
 class Rule:
-    pass
-
-
-# TODO: добавить And и Or
+    priority = None
 
 
 class RegExp(Rule):

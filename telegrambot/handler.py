@@ -22,6 +22,12 @@ class Handler:
         self.rule = rule
         self._handler = handler
 
+    @property
+    def priority(self):
+        if hasattr(self.rule, "priority"):
+            return self.rule.priority
+        return 1000000
+
     async def __call__(self, *args, **kwargs):
         if self:
             await self._handler(*args, **kwargs)
@@ -54,8 +60,8 @@ class Handlers:
         for _chat_type in (chat_type, None):
             for _incoming in (incoming, None):
                 for _message_type in (message_type, None):
-                    for rule, handler in self._handlers[_chat_type][_incoming][_message_type] or []:
-                        if _is_match(rule, incoming, message_type, raw):
+                    for handler in self._handlers[_chat_type][_incoming][_message_type] or []:
+                        if _is_match(handler.rule, incoming, message_type, raw):
                             return handler
         return self.__default_handler
 
@@ -81,8 +87,8 @@ class Handlers:
             if not callable(handler):
                 raise ValueError("The `handler` must be callable type")
 
-            for accepted_pattern, _ in self._handlers[chat_type][incoming][message_type]:
-                if accepted_pattern == rule:
+            for h in self._handlers[chat_type][incoming][message_type]:
+                if h.rule == rule:
                     raise HandlerError(
                         "The handler with chat_type={}, incoming={}, message_type={} and rule `{}` already in.".format(
                             chat_type, incoming, message_type, rule
@@ -90,16 +96,9 @@ class Handlers:
                     )
 
             self._handlers[chat_type][incoming][message_type].append(
-                (
-                    rule,
-                    self._handler_cls(handler, chat_type, incoming, message_type, rule)
-                )
+                self._handler_cls(handler, chat_type, incoming, message_type, rule)
             )
-            # TODO: sort by priority:
-            # - Exact match [Text, str, int]
-            # - Contains (нужен ли этот шаблон?)
-            # - RegExp
-            # - None
+            self._handlers[chat_type][incoming][message_type].sort(key=lambda x: x.priority)
             return handler
         return decorator
 
