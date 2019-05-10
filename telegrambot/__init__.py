@@ -4,3 +4,4 @@ from telegrambot.handler import Handler, Handlers
 from telegrambot.types import ChatType, Incoming, MessageType
 
 __all__ = ["Bot", "ChatType", "Client", "Handler", "Handlers", "Incoming", "Message", "MessageType"]
+__version__ = "0.0.1"
