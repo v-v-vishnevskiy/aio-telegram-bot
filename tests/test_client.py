@@ -1,4 +1,5 @@
 import asynctest
+import pytest
 from aiotelegrambot import Client
 
 
@@ -39,6 +40,27 @@ async def test_close(mocker):
     mock_close.assert_called_once_with()
 
 
-# async def test_get_updates(mocker):
-#     mocker.patch("aiohttp.ClientSession")
-#     client = Client("TOKEN")
+@pytest.mark.parametrize("param", [None, "offset", "limit", "timeout"])
+async def test_get_updates(mocker, param):
+    mocker.patch("aiohttp.ClientSession")
+    mock_request = mocker.patch("aiotelegrambot.Client.request", new=asynctest.CoroutineMock())
+    client = Client("TOKEN")
+
+    if param:
+        assert await client.get_updates(**{param: 1}) == mock_request.return_value
+        mock_request.assert_called_once_with("get", "getUpdates", params={param: 1})
+    else:
+        assert await client.get_updates() == mock_request.return_value
+        mock_request.assert_called_once_with("get", "getUpdates", params={})
+
+
+async def test_send_message(mocker):
+    mocker.patch("aiohttp.ClientSession")
+    mock_request = mocker.patch("aiotelegrambot.Client.request", new=asynctest.CoroutineMock())
+    client = Client("TOKEN")
+
+    mock_text = mocker.MagicMock()
+    mock_chat_id = mocker.MagicMock()
+
+    await client.send_message(mock_text, mock_chat_id)
+    mock_request.assert_called_once_with("get", "sendMessage", params={"chat_id": mock_chat_id, "text": mock_text})

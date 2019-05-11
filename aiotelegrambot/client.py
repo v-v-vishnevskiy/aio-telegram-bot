@@ -24,9 +24,9 @@ class Client:
 
     async def get_updates(
             self,
-            offset: Optional[int] = None,
-            limit: Optional[int] = None,
-            timeout: Optional[int] = None
+            offset: Optional[Union[int, str]] = None,
+            limit: Optional[Union[int, str]] = None,
+            timeout: Optional[Union[int, str]] = None
     ) -> Optional[Dict]:
         params = {}
         if offset:
