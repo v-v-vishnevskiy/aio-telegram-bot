@@ -6,5 +6,6 @@ __pycache__
 .vscode
 venv
 .venv
+coverage.xml
 tmp/
 todo.txt

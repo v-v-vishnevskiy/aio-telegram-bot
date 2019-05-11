@@ -4,10 +4,8 @@
 A framework to build your own Telegram Bot over [API](https://core.telegram.org/bots/api).
 
 
-## Requirements
-- Python >= 3.5.3
-- aiohttp == 3.5.4
-- aiojobs == 0.2.2
+## Installation
+`aio-telegram-bot` requires Python 3.5.3+
 
 
 ## License

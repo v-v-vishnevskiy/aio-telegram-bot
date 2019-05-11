@@ -1,5 +1,8 @@
+import aiohttp
 import asynctest
 import pytest
+
+from aioresponses import aioresponses
 from aiotelegrambot import Client
 
 
@@ -64,3 +67,34 @@ async def test_send_message(mocker):
 
     await client.send_message(mock_text, mock_chat_id)
     mock_request.assert_called_once_with("get", "sendMessage", params={"chat_id": mock_chat_id, "text": mock_text})
+
+
+@pytest.mark.parametrize("data", [{"ok": [1]}, {"ok": []}])
+async def test_request(mocker, data):
+    mock_error = mocker.patch("aiotelegrambot.client.logger.error")
+    client = Client("TOKEN")
+
+    with aioresponses() as m:
+        m.get(client._url + "getUpdates", payload=data)
+
+        assert await client.request("get", "getUpdates") == (data if data["ok"] else None)
+        if not data["ok"]:
+            mock_error.assert_called_once_with("Unsuccessful request", extra=data)
+
+
+@pytest.mark.parametrize("status", [400, 500])
+async def test_request_error(mocker, status):
+    mock_error = mocker.patch("aiotelegrambot.client.logger.error")
+    client = Client("TOKEN")
+
+    data = {"ok": [1]}
+    with aioresponses() as m:
+        m.get(client._url + "getUpdates", status=status, payload=data)
+
+        if status == 500:
+            with pytest.raises(aiohttp.ClientResponseError):
+                await client.request("get", "getUpdates")
+            mock_error.assert_called_once_with("Status: 500", extra=data)
+        else:
+            assert await client.request("get", "getUpdates") is None
+            mock_error.assert_called_once_with("Status: 400", extra=data)
