@@ -1,45 +1,7 @@
-from typing import Iterable
-
 import pytest
 
 from aiotelegrambot import Chat, Content, Incoming
 from aiotelegrambot.types import recognize_incoming, recognize_type
-
-
-def messages(content_type: Iterable = Content) -> list:
-    result = []
-    incoming = Incoming.NEW_MESSAGE
-    for _content_type in content_type:
-        data = {
-            incoming.value: {
-                "chat": {"type": Chat.PRIVATE.value}
-            }
-        }
-        make_content(data[incoming.value], _content_type)
-        result.append((data, Chat.PRIVATE, incoming, _content_type))
-    return result
-
-
-def make_content(data: dict, content_type: Content):
-    if content_type is None:
-        return
-
-    value = "Some text"
-    if content_type.has_entity:
-        key = content_type.value[0]
-    else:
-        key = content_type.value
-
-    data[key] = value
-
-    if content_type.has_entity:
-        data[content_type.value[1]] = [
-            {
-                "offset": 0,
-                "length": len(value),
-                "type": content_type.value[2]
-            }
-        ]
 
 
 def test_is_message_or_post():
@@ -81,7 +43,47 @@ def test_recognize_incoming(field):
         assert recognize_incoming(data) == Incoming(field)
 
 
-@pytest.mark.parametrize("data", messages([Content.TEXT, Content.COMMAND, None]))
+@pytest.mark.parametrize(
+    "data",
+    [
+        (
+            {
+                Incoming.NEW_MESSAGE.value: {
+                    "text": "text",
+                    "chat": {"type": Chat.PRIVATE.value}
+                }
+            },
+            Chat.PRIVATE,
+            Incoming.NEW_MESSAGE,
+            Content.TEXT
+        ),
+        (
+            {
+                Incoming.NEW_MESSAGE.value: {
+                    "text": "/stat today",
+                    "chat": {"type": Chat.PRIVATE.value},
+                    "entities": [{
+                        "offset": 0,
+                        "type": Content.COMMAND.value[2]
+                    }]
+                }
+            },
+            Chat.PRIVATE,
+            Incoming.NEW_MESSAGE,
+            Content.COMMAND
+        ),
+        (
+            {
+                Incoming.NEW_MESSAGE.value: {
+                    "chat": {"type": Chat.PRIVATE.value}
+                }
+            },
+            Chat.PRIVATE,
+            Incoming.NEW_MESSAGE,
+            None
+        )
+    ]
+)
 def test_recognize_type(data):
     data, chat_type, incoming, content_type = data
     assert recognize_type(data) == (chat_type, incoming, content_type)
