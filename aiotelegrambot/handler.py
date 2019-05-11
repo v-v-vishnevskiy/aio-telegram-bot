@@ -2,7 +2,7 @@ from collections import defaultdict
 from typing import Callable, Optional
 
 from aiotelegrambot.errors import HandlerError
-from aiotelegrambot.rules import _RuleType, _is_match, _prepare_rule
+from aiotelegrambot.rules import _RuleType, is_match, prepare_rule
 from aiotelegrambot.types import Chat, Incoming, Content
 
 
@@ -61,7 +61,7 @@ class Handlers:
             for _incoming in (incoming, None):
                 for _content_type in (content_type, None):
                     for handler in self._handlers[_chat_type][_incoming][_content_type] or []:
-                        if _is_match(handler.rule, incoming, content_type, raw):
+                        if handler.rule is None or is_match(handler.rule, incoming, content_type, raw):
                             return handler
         return self.__default_handler
 
@@ -81,7 +81,7 @@ class Handlers:
                 raise HandlerError("The `pattern` allowed only for message or post incoming")
 
         if rule is not None:
-            rule = _prepare_rule(content_type, rule)
+            rule = prepare_rule(content_type, rule)
 
         def decorator(handler: Callable):
             if not callable(handler):

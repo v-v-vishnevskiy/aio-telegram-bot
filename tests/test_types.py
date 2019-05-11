@@ -36,7 +36,7 @@ def messages(chat_type: Iterable=Chat, incoming: Iterable=Incoming, content_type
     return result
 
 
-def make_content(data: dict, content_type: Content) -> Any:
+def make_content(data: dict, content_type: Content):
     if content_type is None:
         return
 

@@ -15,15 +15,15 @@ class RegExp(Rule):
     def __init__(self, pattern: str):
         self._pattern = re.compile(pattern)
 
-    def __eq__(self, other: Union[str, Rule]):
+    def __eq__(self, other: Union[str, Rule]) -> bool:
         if isinstance(other, Rule):
             return self.__hash__() == hash(other)
         return bool(self._pattern.match(other))
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash(self._pattern)
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return 'RegExp("{}")'.format(self._pattern.pattern)
 
 
@@ -34,27 +34,27 @@ class Text(Rule):
         self._text = text.lower() if insensitive else text
         self._insensitive = insensitive
 
-    def __eq__(self, other: Union[str, Rule]):
+    def __eq__(self, other: Union[str, Rule]) -> bool:
         if isinstance(other, Rule):
             return self.__hash__() == hash(other)
         return self._text == (other.lower() if self._insensitive else other)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return hash((self.__class__, self._text, self._insensitive))
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return '{}("{}", {})'.format(self.__class__.__name__, self._text, self._insensitive)
 
 
 class Contains(Text):
     priority = 300
 
-    def __eq__(self, other: Union[str, Rule]):
+    def __eq__(self, other: Union[str, Rule]) -> bool:
         if isinstance(other, Rule):
             return self.__hash__() == hash(other)
         return self._text in (other.lower() if self._insensitive else other)
 
-    def __hash__(self):
+    def __hash__(self) -> int:
         return super().__hash__()
 
 
@@ -81,7 +81,7 @@ class Mention(Pattern):
 _RuleType = Union[Rule, str, int]
 
 
-def _prepare_rule(content_type: Optional[Content], rule: _RuleType) -> _RuleType:
+def prepare_rule(content_type: Optional[Content], rule: _RuleType) -> _RuleType:
     if content_type == Content.COMMAND and isinstance(rule, str):
         return Command(rule)
     elif content_type == Content.MENTION and isinstance(rule, str):
@@ -91,10 +91,8 @@ def _prepare_rule(content_type: Optional[Content], rule: _RuleType) -> _RuleType
     return rule
 
 
-def _is_match(rule: Optional[_RuleType], incoming: Incoming, content_type: Content, raw: dict) -> bool:
-    if rule is None:
-        return True
-    elif incoming.is_message_or_post:
+def is_match(rule: Optional[_RuleType], incoming: Incoming, content_type: Content, raw: dict) -> bool:
+    if incoming.is_message_or_post:
         raw = raw[incoming.value]
         if content_type.has_entity:
             key, entity_key, _ = content_type.value
