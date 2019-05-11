@@ -7,7 +7,7 @@ from aiotelegrambot.client import Client
 from aiotelegrambot.errors import BotError
 from aiotelegrambot.handler import Handlers
 from aiotelegrambot.middleware import Middlewares
-from aiotelegrambot.types import Chat, Incoming, Content, _recognize_type
+from aiotelegrambot.types import Chat, Incoming, Content, recognize_type
 
 
 class Message:
@@ -78,7 +78,7 @@ class Bot:
         if self.__closed is True:
             raise RuntimeError("The bot isn't initialized")
 
-        chat_type, incoming, content_type = _recognize_type(data)
+        chat_type, incoming, content_type = recognize_type(data)
         handler = self.handlers.get(chat_type, incoming, content_type, data)
         await self.__scheduler.spawn(
             self.middlewares(Message(self.client, data, chat_type, incoming, content_type), handler)

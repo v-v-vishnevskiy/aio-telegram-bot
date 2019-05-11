@@ -1,6 +1,6 @@
 from enum import Enum
 from functools import lru_cache
-from typing import Optional, Tuple
+from typing import List, Optional, Tuple
 
 
 class Chat(Enum):
@@ -63,28 +63,28 @@ class Content(Enum):
     def has_entity(self):
         return isinstance(self.value, tuple)
 
+    @staticmethod
+    @lru_cache(maxsize=1)
+    def get_by_priority() -> List['Content']:
+        first = []
+        second = []
 
-@lru_cache(maxsize=1)
-def _get_by_priority():
-    first = []
-    second = []
-
-    for content_type in Content:
-        if isinstance(content_type.value, tuple):
-            first.append(content_type)
-        else:
-            second.append(content_type)
-    return first + second
+        for content_type in Content:
+            if isinstance(content_type.value, tuple):
+                first.append(content_type)
+            else:
+                second.append(content_type)
+        return first + second
 
 
-def _recognize_incoming(raw: dict) -> Optional[Incoming]:
+def recognize_incoming(raw: dict) -> Optional[Incoming]:
     for incoming in Incoming:
         if incoming.value in raw:
             return incoming
 
 
-def _recognize_type(raw: dict) -> Tuple[Optional[Chat], Optional[Incoming], Optional[Content]]:
-    incoming = _recognize_incoming(raw)
+def recognize_type(raw: dict) -> Tuple[Optional[Chat], Optional[Incoming], Optional[Content]]:
+    incoming = recognize_incoming(raw)
     if incoming is None:
         return None, None, None
     elif not incoming.is_message_or_post:
@@ -93,17 +93,18 @@ def _recognize_type(raw: dict) -> Tuple[Optional[Chat], Optional[Incoming], Opti
 
     chat_type = Chat(raw["chat"]["type"])
 
-    for m_type in _get_by_priority():
+    for content_type in Content.get_by_priority():
         entity_key = entity_type = None
-        if isinstance(m_type.value, tuple):
-            key, entity_key, entity_type = m_type.value
+        if content_type.has_entity:
+            key, entity_key, entity_type = content_type.value
         else:
-            key = m_type.value
+            key = content_type.value
 
         if key in raw:
             if not entity_key:
-                return chat_type, incoming, m_type
+                return chat_type, incoming, content_type
             elif entity_key in raw:
                 entity = raw[entity_key][0]
                 if entity["offset"] == 0 and entity["type"] == entity_type:
-                    return chat_type, incoming, m_type
+                    return chat_type, incoming, content_type
+    return chat_type, incoming, None
