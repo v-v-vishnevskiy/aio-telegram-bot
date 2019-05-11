@@ -1,8 +1,8 @@
 import re
 from typing import Optional, Union
 
-from telegrambot.errors import RuleError
-from telegrambot.types import Incoming, Content
+from aiotelegrambot.errors import RuleError
+from aiotelegrambot.types import Incoming, Content
 
 
 class Rule:

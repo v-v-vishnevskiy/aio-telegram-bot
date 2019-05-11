@@ -3,11 +3,11 @@ from typing import Callable, Optional, Union
 
 import aiojobs
 
-from telegrambot.client import Client
-from telegrambot.errors import BotError
-from telegrambot.handler import Handlers
-from telegrambot.middleware import Middlewares
-from telegrambot.types import Chat, Incoming, Content, _recognize_type
+from aiotelegrambot.client import Client
+from aiotelegrambot.errors import BotError
+from aiotelegrambot.handler import Handlers
+from aiotelegrambot.middleware import Middlewares
+from aiotelegrambot.types import Chat, Incoming, Content, _recognize_type
 
 
 class Message:

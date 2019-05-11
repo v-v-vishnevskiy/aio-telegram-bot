@@ -1,7 +1,7 @@
 from functools import partial
 from typing import Callable
 
-from telegrambot.handler import Handler
+from aiotelegrambot.handler import Handler
 
 
 def _append_middleware(middleware: Callable, prev_middleware: Callable) -> Callable:

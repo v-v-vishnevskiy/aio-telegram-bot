@@ -1,5 +1,10 @@
 import os
+import sys
 from setuptools import setup
+
+
+if sys.version_info < (3, 5, 3):
+    raise RuntimeError("aio-telegram-bot requires Python 3.5.3+")
 
 
 with open(os.path.join(os.path.dirname(__file__), "telegrambot", "__init__.py")) as f:
@@ -22,6 +27,9 @@ setup(
     author="Valery Vishnevskiy",
     author_email="v.v.vishnevskiy@gmail.com",
     url="https://github.com/v-v-vishnevskiy/aio-telegram-bot",
+    project_urls={
+        'GitHub: repo': 'https://github.com/v-v-vishnevskiy/aio-telegram-bot',
+    },
     description="A framework to build your own Telegram bot",
     long_description=readme,
     classifiers=[
@@ -40,11 +48,13 @@ setup(
         "Programming Language :: Python :: 3.7",
         "Programming Language :: Python :: Implementation :: PyPy",
         "Topic :: Communications :: Chat",
+        "Topic :: Internet :: WWW/HTTP",
         "Topic :: Software Development :: Libraries :: Python Modules"
     ],
     license="MIT",
     keywords=["aio", "async", "telegram", "bot"],
-    packages=["telegrambot"],
-    provides=["telegrambot"],
+    packages=["aiotelegrambot"],
+    provides=["aiotelegrambot"],
+    python_requires=">=3.5.3",
     install_requires=["aiohttp==3.5.4", "aiojobs==0.2.2"],
 )

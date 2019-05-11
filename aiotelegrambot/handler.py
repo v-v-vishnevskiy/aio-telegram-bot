@@ -1,9 +1,9 @@
 from collections import defaultdict
 from typing import Callable, Optional
 
-from telegrambot.errors import HandlerError
-from telegrambot.rules import _RuleType, _is_match, _prepare_rule
-from telegrambot.types import Chat, Incoming, Content
+from aiotelegrambot.errors import HandlerError
+from aiotelegrambot.rules import _RuleType, _is_match, _prepare_rule
+from aiotelegrambot.types import Chat, Incoming, Content
 
 
 class Handler:
