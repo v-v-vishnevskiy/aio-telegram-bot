@@ -1,13 +1,7 @@
 import aiohttp
 import logging
-
+from json import loads
 from typing import Dict, Optional, Union
-
-
-try:
-    from ujson import dumps, loads
-except ImportError:
-    from json import dumps, loads
 
 logger = logging.getLogger(__name__)
 
@@ -19,8 +13,7 @@ class Client:
         self._url = "{}{}/".format(self.base_url, token)
 
         session_kwargs = {
-            "timeout": aiohttp.ClientTimeout(total=1),
-            "json_serialize": dumps
+            "timeout": aiohttp.ClientTimeout(total=1)
         }
         session_kwargs.update(kwargs)
 
@@ -34,7 +27,7 @@ class Client:
             offset: Optional[int] = None,
             limit: Optional[int] = None,
             timeout: Optional[int] = None
-    ):
+    ) -> Optional[Dict]:
         params = {}
         if offset:
             params["offset"] = offset
