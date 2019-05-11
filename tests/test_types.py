@@ -1,4 +1,4 @@
-from typing import Any, Iterable
+from typing import Iterable
 
 import pytest
 
@@ -6,33 +6,17 @@ from aiotelegrambot import Chat, Content, Incoming
 from aiotelegrambot.types import recognize_incoming, recognize_type
 
 
-def messages(chat_type: Iterable=Chat, incoming: Iterable=Incoming, content_type: Iterable=Content) -> list:
+def messages(content_type: Iterable = Content) -> list:
     result = []
-    for is_bot in (False, True):
-        for _chat_type in chat_type:
-            for _incoming in incoming:
-                for _content_type in content_type:
-                    data = {
-                        "update_id": 12674014,
-                        _incoming.value: {
-                            "message_id": 2465,
-                            "from": {
-                                "id": 201191853,
-                                "is_bot": is_bot,
-                                "first_name": "Valery",
-                                "last_name": "Vishnevskiy",
-                                "language_code": "root"
-                            },
-                            "chat": {
-                                "id": 123,
-                                "title": "Дотеры-Дегротеры",
-                                "type": _chat_type.value
-                            },
-                            "date": 1557568806
-                        }
-                    }
-                    make_content(data[_incoming.value], _content_type)
-                    result.append((data, _chat_type, _incoming, _content_type))
+    incoming = Incoming.NEW_MESSAGE
+    for _content_type in content_type:
+        data = {
+            incoming.value: {
+                "chat": {"type": Chat.PRIVATE.value}
+            }
+        }
+        make_content(data[incoming.value], _content_type)
+        result.append((data, Chat.PRIVATE, incoming, _content_type))
     return result
 
 
@@ -97,10 +81,7 @@ def test_recognize_incoming(field):
         assert recognize_incoming(data) == Incoming(field)
 
 
-@pytest.mark.parametrize(
-    "data",
-    messages([Chat.PRIVATE], [Incoming.NEW_MESSAGE], [Content.TEXT, Content.COMMAND, None])
-)
+@pytest.mark.parametrize("data", messages([Content.TEXT, Content.COMMAND, None]))
 def test_recognize_type(data):
     data, chat_type, incoming, content_type = data
     assert recognize_type(data) == (chat_type, incoming, content_type)
