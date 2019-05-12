@@ -9,9 +9,9 @@ class Message:
             self,
             client: Client,
             raw: dict,
-            chat_type: Optional[Chat],
-            incoming: Optional[Incoming],
-            content_type: Optional[Content]
+            chat_type: Optional[Chat] = None,
+            incoming: Optional[Incoming] = None,
+            content_type: Optional[Content] = None
     ):
         self._client = client
         self.raw = raw
