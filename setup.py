@@ -28,7 +28,9 @@ setup(
     author_email="v.v.vishnevskiy@gmail.com",
     url="https://github.com/v-v-vishnevskiy/aio-telegram-bot",
     project_urls={
-        'GitHub: repo': 'https://github.com/v-v-vishnevskiy/aio-telegram-bot',
+        "CI: Travis": "https://travis-ci.org/v-v-vishnevskiy/aio-telegram-bot",
+        "Coverage: codecov": "https://codecov.io/gh/v-v-vishnevskiy/aio-telegram-bot",
+        "GitHub: repo": "https://github.com/v-v-vishnevskiy/aio-telegram-bot",
     },
     description="A framework to build your own Telegram bot",
     long_description=readme,
