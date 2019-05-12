@@ -7,16 +7,16 @@ python:
   - &mainstream_python 3.7
   - &pypy3 pypy3.5-7.0.0
 
+cache: pip
+
 install:
   - pip install -r requirements/test.txt
-  - pip install ./
+  - pip install .
 
 script: pytest
 
 after_success:
  - codecov
-
-cache: pip
 
 branches:
     only:
