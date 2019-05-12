@@ -9,7 +9,7 @@ python:
 
 install:
   - pip install -r requirements/test.txt
-  - pip install .
+  - pip install ./
 
 script: pytest
 
