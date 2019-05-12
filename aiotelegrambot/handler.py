@@ -20,7 +20,7 @@ class Handler:
         self.incoming = incoming
         self.content_type = content_type
         self.rule = rule
-        self._handler = handler
+        self.handler = handler
 
     @property
     def priority(self):
@@ -30,10 +30,10 @@ class Handler:
 
     async def __call__(self, *args, **kwargs):
         if self:
-            await self._handler(*args, **kwargs)
+            await self.handler(*args, **kwargs)
 
     def __bool__(self):
-        return self._handler is not None
+        return self.handler is not None
 
     def __hash__(self):
         return hash((self.name, self.chat_type, self.incoming, self.content_type, self.rule))
@@ -48,7 +48,7 @@ class Handlers:
     def __init__(self, handler_cls: type(Handler) = Handler):
         self._handler_cls = handler_cls
         self._handlers = defaultdict(lambda: defaultdict(lambda: defaultdict(list)))
-        self.__default_handler = handler_cls()
+        self._default_handler = handler_cls()
 
     def get(
             self,
@@ -63,7 +63,7 @@ class Handlers:
                     for handler in self._handlers[_chat_type][_incoming][_content_type] or []:
                         if handler.rule is None or is_match(handler.rule, incoming, content_type, raw):
                             return handler
-        return self.__default_handler
+        return self._default_handler
 
     def add(
             self,
@@ -78,7 +78,7 @@ class Handlers:
             if content_type is not None:
                 raise HandlerError("The `content_type` allowed only for message or post incoming")
             elif rule is not None:
-                raise HandlerError("The `pattern` allowed only for message or post incoming")
+                raise HandlerError("The `rule` allowed only for message or post incoming")
 
         if rule is not None:
             rule = prepare_rule(content_type, rule)

@@ -32,7 +32,7 @@ setup(
         "Coverage: codecov": "https://codecov.io/gh/v-v-vishnevskiy/aio-telegram-bot",
         "GitHub: repo": "https://github.com/v-v-vishnevskiy/aio-telegram-bot",
     },
-    description="A framework to build your own Telegram bot",
+    description="An asynchronous framework for building your own Telegram Bot",
     long_description=readme,
     classifiers=[
         "Development Status :: 4 - Beta",
