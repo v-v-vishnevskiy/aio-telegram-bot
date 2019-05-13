@@ -2,7 +2,7 @@ import re
 from typing import Optional, Union
 
 from aiotelegrambot.errors import RuleError
-from aiotelegrambot.types import Incoming, Content
+from aiotelegrambot.types import Content, Incoming
 
 
 class Rule:

@@ -1,7 +1,7 @@
 from typing import Callable, Optional, Union
 
 from aiotelegrambot.client import Client
-from aiotelegrambot.types import Chat, Incoming, Content
+from aiotelegrambot.types import Chat, Content, Incoming
 
 
 class Message:

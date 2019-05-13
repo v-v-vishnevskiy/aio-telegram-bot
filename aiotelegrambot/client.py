@@ -1,7 +1,8 @@
-import aiohttp
 import logging
 from json import loads
 from typing import Dict, Optional, Union
+
+import aiohttp
 
 logger = logging.getLogger(__name__)
 

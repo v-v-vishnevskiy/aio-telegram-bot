@@ -1,7 +1,8 @@
 import pytest
-from aiotelegrambot.types import Content, Incoming
-from aiotelegrambot.rules import Command, Contains, Mention, RegExp, Text, is_match, prepare_rule
+
 from aiotelegrambot.errors import RuleError
+from aiotelegrambot.rules import Command, Contains, Mention, RegExp, Text, is_match, prepare_rule
+from aiotelegrambot.types import Content, Incoming
 
 
 class TestRegExp:

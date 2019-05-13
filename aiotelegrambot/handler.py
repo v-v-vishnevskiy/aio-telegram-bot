@@ -3,7 +3,7 @@ from typing import Callable, Optional
 
 from aiotelegrambot.errors import HandlerError
 from aiotelegrambot.rules import _RuleType, is_match, prepare_rule
-from aiotelegrambot.types import Chat, Incoming, Content
+from aiotelegrambot.types import Chat, Content, Incoming
 
 
 class Handler:

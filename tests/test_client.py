@@ -1,8 +1,8 @@
 import aiohttp
 import asynctest
 import pytest
-
 from aioresponses import aioresponses
+
 from aiotelegrambot import Client
 
 

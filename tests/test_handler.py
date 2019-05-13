@@ -1,8 +1,9 @@
 import asynctest
 import pytest
+
 from aiotelegrambot import Content, Handler, Handlers
 from aiotelegrambot.errors import HandlerError
-from aiotelegrambot.rules import Text, Command
+from aiotelegrambot.rules import Text
 
 
 class TestHandler:
