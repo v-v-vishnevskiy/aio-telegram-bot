@@ -69,8 +69,12 @@ async def test_initialize_error(mocker, bot):
 
 async def test_close(mocker, bot):
     mock_close = asynctest.CoroutineMock()
+    mock_job = mocker.MagicMock()
+    mock_job.wait = asynctest.CoroutineMock()
     bot._scheduler = mocker.MagicMock()
     bot._scheduler.close = mock_close
+    bot._scheduler.__iter__ = mocker.MagicMock()
+    bot._scheduler.__iter__.return_value = iter([mock_job])
 
     await bot.close()
 
@@ -86,6 +90,7 @@ async def test_close(mocker, bot):
     mock_close.assert_called_once_with()
     assert bot._closed is True
     assert bot._update_id == 0
+    mock_job.wait.assert_called_once_with()
 
 
 def test_add_handler(mocker, bot):

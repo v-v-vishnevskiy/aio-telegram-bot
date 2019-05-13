@@ -38,6 +38,9 @@ class Bot:
 
         self._closed = True
 
+        for job in self._scheduler:
+            await job.wait()
+
         await self._scheduler.close()
         self._scheduler = None
 
