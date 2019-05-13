@@ -29,5 +29,5 @@ class Middlewares:
     async def __call__(self, message: Message, handler: Handler):
         if self.__middleware:
             await self.__middleware(message, handler)
-        elif handler:
+        else:
             await handler(message)

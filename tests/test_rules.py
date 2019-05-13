@@ -32,7 +32,7 @@ class TestRegExp:
         pattern = "^[0-9]"
         mock_hash = mocker.patch("aiotelegrambot.rules.hash", return_value=1)
         re = RegExp(pattern)
-        data = {re: 1}
+        {re: 1}
 
         mock_hash.assert_called_once_with(re._pattern)
 
@@ -42,14 +42,14 @@ class TestRegExp:
 
 
 class TestText:
-    def test___init__(self, mocker):
+    def test___init__(self):
         text = "TEXT"
         t = Text(text)
 
         assert t._text == text.lower()
         assert t._insensitive is True
 
-    def test___init___sensitive(self, mocker):
+    def test___init___sensitive(self):
         text = "TEXT"
         t = Text(text, False)
 
@@ -79,7 +79,7 @@ class TestText:
         text = "TEXT"
         mock_hash = mocker.patch("aiotelegrambot.rules.hash", return_value=1)
         t = Text(text)
-        data = {t: 1}
+        {t: 1}
 
         mock_hash.assert_called_once_with((Text, text.lower(), True))
 

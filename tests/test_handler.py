@@ -36,6 +36,10 @@ class TestHandler:
         await h(param=123)
         mock_handler.assert_called_once_with(param=123)
 
+    async def test___call___no_handler(self):
+        h = Handler()
+        await h(param=123)
+
     def test___bool__(self):
         async def handler():
             pass
@@ -171,6 +175,14 @@ class TestHandlers:
 
         with pytest.raises(HandlerError):
             h.add(incoming=incoming, rule="/help")
+
+        ##################################
+
+        incoming = mocker.MagicMock()
+        incoming.is_message_or_post = False
+
+        assert callable(h.add(incoming=incoming))
+        assert mock_prepare_rule.call_count == 0
 
         ##################################
 

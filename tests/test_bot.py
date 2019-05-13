@@ -161,11 +161,14 @@ async def test__get_updates(mocker, bot):
     mock_sleep.assert_called_once_with(mock_interval)
 
 
-@pytest.mark.parametrize("result", [[], [{"update_id": 2}]])
+@pytest.mark.parametrize("result", [None, [], [{"update_id": 2}]])
 async def test__process_updates(bot, result):
     bot.process_update = asynctest.CoroutineMock()
 
-    data = {"result": result}
+    if result is not None:
+        data = {"result": result}
+    else:
+        data = {}
     update_id = bot._update_id
 
     await bot._process_updates(data)
