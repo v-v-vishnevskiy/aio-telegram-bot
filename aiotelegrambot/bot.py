@@ -20,7 +20,7 @@ class Bot:
         self._closed = True
         self._update_id = 0
 
-    async def initialize(self, *, webhooks: bool = False, interval: float = 0.1, **scheduler_options):
+    async def initialize(self, *, webhook: bool = False, interval: float = 0.1, **scheduler_options):
         if self._closed is False:
             return
 
@@ -29,7 +29,7 @@ class Bot:
 
         self._closed = False
         self._scheduler = await aiojobs.create_scheduler(**scheduler_options)
-        if webhooks is False:
+        if webhook is False:
             await self._scheduler.spawn(self._get_updates(interval))
 
     async def close(self):

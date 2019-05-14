@@ -25,8 +25,8 @@ def test___init__(mocker):
     assert b._update_id == 0
 
 
-@pytest.mark.parametrize("webhooks_value", [True, False])
-async def test_initialize(mocker, webhooks_value):
+@pytest.mark.parametrize("webhook_value", [True, False])
+async def test_initialize(mocker, webhook_value):
     mock_create_scheduler = asynctest.CoroutineMock()
     mock_spawn = mocker.patch.object(mock_create_scheduler.return_value, "spawn", new=asynctest.CoroutineMock())
     mocker.patch("aiotelegrambot.bot.aiojobs.create_scheduler", new=mock_create_scheduler)
@@ -39,13 +39,13 @@ async def test_initialize(mocker, webhooks_value):
     scheduler_options = {"a": 1}
     interval = mocker.MagicMock()
 
-    await b.initialize(webhooks=webhooks_value, interval=interval, **scheduler_options)
+    await b.initialize(webhook=webhook_value, interval=interval, **scheduler_options)
 
     assert b._closed is False
     assert b._scheduler is mock_create_scheduler.return_value
     mock_create_scheduler.assert_called_once_with(**scheduler_options)
 
-    if webhooks_value:
+    if webhook_value:
         assert mock_spawn.call_count == 0
         assert mock_get_updates.call_count == 0
     else:
