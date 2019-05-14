@@ -1,6 +1,6 @@
 import logging
 from json import loads
-from typing import Dict, Optional, Union
+from typing import List, Optional, Union
 
 import aiohttp
 
@@ -28,7 +28,7 @@ class Client:
             offset: Optional[Union[int, str]] = None,
             limit: Optional[Union[int, str]] = None,
             timeout: Optional[Union[int, str]] = None
-    ) -> Optional[Dict]:
+    ) -> Optional[dict]:
         params = {}
         if offset:
             params["offset"] = offset
@@ -38,10 +38,31 @@ class Client:
             params["timeout"] = timeout
         return await self.request("get", "getUpdates", params=params)
 
+    async def set_webhook(
+            self,
+            url: str,
+            certificate: Optional[str] = None,
+            max_connections: Optional[int] = None,
+            allowed_updates: Optional[List[str]] = None
+    ) -> Optional[dict]:
+        kwargs = {
+            "params": [("url", url)]
+        }
+        if certificate:
+            kwargs["data"] = {"certificate": open(certificate, "rb")}
+        if max_connections is not None:
+            kwargs["params"].append(("max_connections", max_connections))
+        if allowed_updates is not None:
+            kwargs["params"].extend([("allowed_updates", value) for value in allowed_updates])
+        return await self.request("post", "setWebhook", **kwargs)
+
+    async def delete_webhook(self) -> Optional[dict]:
+        return await self.request("get", "deleteWebhook")
+
     async def send_message(self, text: str, chat_id: Union[int, str]):
         await self.request("get", "sendMessage", params={"chat_id": chat_id, "text": text})
 
-    async def request(self, method: str, api: str, **kwargs) -> Optional[Dict]:
+    async def request(self, method: str, api: str, **kwargs) -> Optional[dict]:
         url = self._url + api
 
         async with getattr(self._session, method)(url, **kwargs) as response:
