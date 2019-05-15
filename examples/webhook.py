@@ -1,3 +1,4 @@
+import argparse
 import asyncio
 import json
 import logging
@@ -17,8 +18,10 @@ handlers = Handlers()
 TOKEN = os.environ["TELEGRAM_BOT_TOKEN"]
 HOST = os.environ["TELEGRAM_BOT_HOST"]
 PORT = 8443
-SSL_PUBLIC_KEY = os.environ["SSL_PUBLIC_KEY"]
-SSL_PRIVATE_KEY = os.environ["SSL_PRIVATE_KEY"]
+
+parser = argparse.ArgumentParser()
+parser.add_argument("files", metavar="N", type=str, nargs="+")
+SSL_PUBLIC_KEY, SSL_PRIVATE_KEY = parser.parse_args().files
 
 
 class MyClient(Client):
@@ -41,9 +44,7 @@ async def hi(message: Message):
 async def webhook_handle(request):
     bot = request.app["bot"]
     data = await request.text()
-    data = json.loads(data)
-    for raw in data["result"]:
-        await bot.process_update(raw)
+    await bot.process_update(json.loads(data))
     return web.Response()
 
 
@@ -52,7 +53,7 @@ async def init_bot(app: web.Application):
     client = MyClient(TOKEN, timeout=ClientTimeout(total=5))
     bot = Bot(client, handlers)
     await bot.initialize(webhook=True)
-    await client.set_webhook("https://{}:{}".format(HOST, PORT), certificate=SSL_PUBLIC_KEY)
+    await client.set_webhook("https://{}:{}/{}".format(HOST, PORT, TOKEN), certificate=SSL_PUBLIC_KEY)
 
     app["bot"] = bot
 
