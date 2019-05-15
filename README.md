@@ -77,6 +77,8 @@ $ export TELEGRAM_BOT_TOKEN=12345678:replace-me-with-real-token
 $ python3 polling.py
 ```
 
+---
+
 #### Webhook example
 
 Example of how to generate ssl certificate:
