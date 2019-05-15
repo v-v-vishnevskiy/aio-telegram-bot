@@ -1,6 +1,6 @@
 import logging
-from json import loads
-from typing import List, Optional, Union
+from json import dumps, loads
+from typing import Callable, List, Optional, Union
 
 import aiohttp
 
@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 class Client:
     base_url = "https://api.telegram.org/bot"
 
-    def __init__(self, token: str, **kwargs):
+    def __init__(self, token: str, json_loads: Callable = loads, **kwargs):
         self._url = "{}{}/".format(self.base_url, token)
 
         session_kwargs = {
@@ -18,6 +18,7 @@ class Client:
         }
         session_kwargs.update(kwargs)
 
+        self._json_loads = json_loads
         self._session = aiohttp.ClientSession(**session_kwargs)
 
     async def close(self):
@@ -49,12 +50,15 @@ class Client:
             "params": [("url", url)]
         }
         if certificate:
-            kwargs["data"] = {"certificate": open(certificate, "rb")}
+            kwargs["data"] = {"certificate": open(certificate, "r")}
         if max_connections is not None:
             kwargs["params"].append(("max_connections", max_connections))
         if allowed_updates is not None:
-            kwargs["params"].extend([("allowed_updates", value) for value in allowed_updates])
+            kwargs["params"].append(("allowed_updates", dumps(allowed_updates)))
         return await self.request("post", "setWebhook", **kwargs)
+
+    async def get_webhook_info(self) -> Optional[dict]:
+        return await self.request("get", "getWebhookInfo")
 
     async def delete_webhook(self) -> Optional[dict]:
         return await self.request("get", "deleteWebhook")
@@ -66,14 +70,15 @@ class Client:
         url = self._url + api
 
         async with getattr(self._session, method)(url, **kwargs) as response:
-            data = loads(await response.text())
+            text = await response.text()
             if response.status == 200:
+                data = self._json_loads(text)
                 if data["ok"]:
                     return data
                 else:
                     logger.error("Unsuccessful request", extra=data)
             else:
-                logger.error("Status: {}".format(response.status), extra=data)
+                logger.error("Status: {}".format(response.status), extra=text)
                 if response.status >= 500:
                     raise aiohttp.ClientResponseError(
                         response.request_info,

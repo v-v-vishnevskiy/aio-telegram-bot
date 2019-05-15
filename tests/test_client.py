@@ -1,3 +1,5 @@
+import json
+
 import aiohttp
 import asynctest
 import pytest
@@ -26,10 +28,12 @@ def test__init___kwargs(mocker):
     token = "TOKEN"
     mock_client_session = mocker.patch("aiohttp.ClientSession")
 
+    mock_json_loads = mocker.MagicMock()
     mock_timeout = mocker.MagicMock()
     mock_json_serialize = mocker.MagicMock()
-    Client(token, timeout=mock_timeout, json_serialize=mock_json_serialize)
+    client = Client(token, json_loads=mock_json_loads, timeout=mock_timeout, json_serialize=mock_json_serialize)
 
+    assert client._json_loads is mock_json_loads
     mock_client_session.assert_called_once_with(timeout=mock_timeout, json_serialize=mock_json_serialize)
 
 
@@ -69,6 +73,62 @@ async def test_send_message(mocker):
     mock_request.assert_called_once_with("get", "sendMessage", params={"chat_id": mock_chat_id, "text": mock_text})
 
 
+async def test_set_webhook(mocker):
+    mocker.patch("aiohttp.ClientSession")
+    mock_request = mocker.patch("aiotelegrambot.Client.request", new=asynctest.CoroutineMock())
+    client = Client("TOKEN")
+
+    mock_url = mocker.MagicMock()
+
+    await client.set_webhook(mock_url)
+    mock_request.assert_called_once_with("post", "setWebhook", params=[("url", mock_url)])
+
+
+async def test_set_webhook_kwargs(mocker):
+    mocker.patch("aiohttp.ClientSession")
+    mock_request = mocker.patch("aiotelegrambot.Client.request", new=asynctest.CoroutineMock())
+    mock_open = mocker.patch("aiotelegrambot.client.open")
+    mock_dumps = mocker.patch("aiotelegrambot.client.dumps")
+    client = Client("TOKEN")
+
+    mock_url = mocker.MagicMock()
+    mock_certificate = mocker.MagicMock()
+    mock_max_connections = mocker.MagicMock()
+    mock_allowed_updates = mocker.MagicMock()
+
+    expected_kwargs = {
+        "params": [
+            ("url", mock_url),
+            ("max_connections", mock_max_connections),
+            ("allowed_updates", mock_dumps.return_value)
+        ],
+        "data": {"certificate": mock_open.return_value}
+    }
+
+    await client.set_webhook(mock_url, mock_certificate, mock_max_connections, mock_allowed_updates)
+    mock_request.assert_called_once_with("post", "setWebhook", **expected_kwargs)
+    mock_open.assert_called_once_with(mock_certificate, "r")
+    mock_dumps.assert_called_once_with(mock_allowed_updates)
+
+
+async def test_get_webhook_info(mocker):
+    mocker.patch("aiohttp.ClientSession")
+    mock_request = mocker.patch("aiotelegrambot.Client.request", new=asynctest.CoroutineMock())
+    client = Client("TOKEN")
+
+    await client.get_webhook_info()
+    mock_request.assert_called_once_with("get", "getWebhookInfo")
+
+
+async def test_delete_webhook(mocker):
+    mocker.patch("aiohttp.ClientSession")
+    mock_request = mocker.patch("aiotelegrambot.Client.request", new=asynctest.CoroutineMock())
+    client = Client("TOKEN")
+
+    await client.delete_webhook()
+    mock_request.assert_called_once_with("get", "deleteWebhook")
+
+
 @pytest.mark.parametrize("data", [{"ok": [1]}, {"ok": []}])
 async def test_request(mocker, data):
     mock_error = mocker.patch("aiotelegrambot.client.logger.error")
@@ -94,7 +154,7 @@ async def test_request_error(mocker, status):
         if status == 500:
             with pytest.raises(aiohttp.ClientResponseError):
                 await client.request("get", "getUpdates")
-            mock_error.assert_called_once_with("Status: 500", extra=data)
+            mock_error.assert_called_once_with("Status: 500", extra=json.dumps(data))
         else:
             assert await client.request("get", "getUpdates") is None
-            mock_error.assert_called_once_with("Status: 400", extra=data)
+            mock_error.assert_called_once_with("Status: 400", extra=json.dumps(data))
