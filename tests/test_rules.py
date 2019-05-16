@@ -127,8 +127,7 @@ class TestCommand:
 
         mock_init.assert_called_once_with("/help", False)
 
-    def test___init___error(self, mocker):
-
+    def test___init___error(self):
         with pytest.raises(RuleError):
             Command("help")
 
@@ -144,8 +143,7 @@ class TestMention:
 
         mock_init.assert_called_once_with("@user", False)
 
-    def test___init___error(self, mocker):
-
+    def test___init___error(self):
         with pytest.raises(RuleError):
             Mention("user")
 
