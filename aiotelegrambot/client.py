@@ -1,8 +1,11 @@
+import asyncio
 import logging
 from json import dumps, loads
 from typing import Callable, List, Optional, Union
 
 import aiohttp
+
+from aiotelegrambot.errors import TelegramApiError
 
 logger = logging.getLogger(__name__)
 
@@ -10,11 +13,13 @@ logger = logging.getLogger(__name__)
 class Client:
     base_url = "https://api.telegram.org/bot"
 
-    def __init__(self, token: str, json_loads: Callable = loads, **kwargs):
+    def __init__(self, token: str, json_loads: Callable = loads, raise_exceptions: bool = False, **kwargs):
         self._url = "{}{}/".format(self.base_url, token)
+        self.raise_exceptions = raise_exceptions
+        self._json_loads = json_loads
 
         session_kwargs = {
-            "timeout": aiohttp.ClientTimeout(total=1)
+            "timeout": aiohttp.ClientTimeout(total=10)
         }
         session_kwargs.update(kwargs)
 
@@ -37,7 +42,7 @@ class Client:
             params["limit"] = limit
         if timeout:
             params["timeout"] = timeout
-        return await self.request("get", "getUpdates", params=params)
+        return await self.request("get", "getUpdates", raise_exception=True, params=params)
 
     async def set_webhook(
             self,
@@ -66,24 +71,44 @@ class Client:
     async def send_message(self, text: str, chat_id: Union[int, str]):
         await self.request("get", "sendMessage", params={"chat_id": chat_id, "text": text})
 
-    async def request(self, method: str, api: str, **kwargs) -> Optional[dict]:
+    async def request(self, method: str, api: str, raise_exception: bool = None, **kwargs) -> Optional[dict]:
+        raise_exception = raise_exception if raise_exception is not None else self.raise_exceptions
+
+        try:
+            return await self._request(method, api, raise_exception, **kwargs)
+        except asyncio.TimeoutError:
+            if raise_exception:
+                raise
+            logger.exception("Timeout")
+        except aiohttp.ClientError:
+            if raise_exception:
+                raise
+            logger.exception("Telegram API connection error")
+
+    async def _request(self, method: str, api: str, raise_exception, **kwargs) -> Optional[dict]:
         url = self._url + api
 
         async with getattr(self._session, method)(url, **kwargs) as response:
-            text = await response.text()
-            if response.status == 200:
-                data = self._json_loads(text)
-                if data["ok"]:
-                    return data
-                else:
-                    logger.error("Unsuccessful request", extra=data)
+            if response.status >= 500:
+                self.process_error("Server error", response, None, raise_exception)
             else:
-                logger.error("Status: {}".format(response.status), extra=text)
-                if response.status >= 500:
-                    raise aiohttp.ClientResponseError(
-                        response.request_info,
-                        response.history,
-                        status=response.status,
-                        message=response.reason,
-                        headers=response.headers
-                    )
+                data = self._json_loads(await response.text())
+                if response.status == 200:
+                    if data["ok"]:
+                        return data
+                    else:
+                        self.process_error("Unsuccessful request", response, data, raise_exception)
+                elif response.status == 401:
+                    self.process_error("Invalid access token provided", response, data, raise_exception)
+                else:
+                    self.process_error("Unexpected behavior", response, data, raise_exception)
+
+    @staticmethod
+    def process_error(msg: str, response: aiohttp.ClientResponse, data: Optional[dict], raise_exception: bool):
+        if raise_exception:
+            raise TelegramApiError(msg, data, response)
+        else:
+            extra = {"status": response.status}
+            if data:
+                extra["description"] = data["description"]
+            logger.error(msg, extra=extra)

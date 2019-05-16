@@ -1,14 +1,18 @@
 import asyncio
+import logging
 from typing import Callable, Union
 
+import aiohttp
 import aiojobs
 
 from aiotelegrambot.client import Client
-from aiotelegrambot.errors import BotError
+from aiotelegrambot.errors import BotError, TelegramApiError
 from aiotelegrambot.handler import Handlers
 from aiotelegrambot.message import Message
 from aiotelegrambot.middleware import Middlewares
 from aiotelegrambot.types import recognize_type
+
+logger = logging.getLogger(__name__)
 
 
 class Bot:
@@ -61,9 +65,21 @@ class Bot:
 
     async def _get_updates(self, interval: float):
         while self._closed is False:
-            data = await self.client.get_updates(self._update_id)
-            await self._process_updates(data)
-            await asyncio.sleep(interval)
+            try:
+                data = await self.client.get_updates(self._update_id)
+                await self._process_updates(data)
+                await asyncio.sleep(interval)
+            except TelegramApiError as e:
+                self.client.process_error(str(e), e.response, e.data, False)
+                if e.response.status >= 500:
+                    await asyncio.sleep(30)
+                else:
+                    await asyncio.sleep(10)
+            except asyncio.TimeoutError as e:
+                logger.exception(str(e))
+            except aiohttp.ClientError as e:
+                logger.exception(str(e))
+                await asyncio.sleep(10)
 
     async def _process_updates(self, data: Union[None, dict]):
         if data:

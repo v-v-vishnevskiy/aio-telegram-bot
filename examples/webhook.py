@@ -1,17 +1,13 @@
 import argparse
-import asyncio
 import json
-import logging
 import os
 import ssl
 
-from aiohttp import ClientError, ClientTimeout, web
+from aiohttp import web
 from async_generator import async_generator, yield_
 
 from aiotelegrambot import Bot, Client, Content, Handlers, Message
 from aiotelegrambot.rules import Contains
-
-logger = logging.getLogger(__name__)
 
 handlers = Handlers()
 
@@ -22,18 +18,6 @@ PORT = 8443
 parser = argparse.ArgumentParser()
 parser.add_argument("files", metavar="N", type=str, nargs="+")
 SSL_PUBLIC_KEY, SSL_PRIVATE_KEY = parser.parse_args().files
-
-
-class MyClient(Client):
-    async def request(self, method: str, api: str, **kwargs) -> dict:
-        try:
-            return await super().request(method, api, **kwargs)
-        except asyncio.TimeoutError:
-            logger.exception("Timeout")
-        except ClientError:
-            logger.exception("Can't connect to telegram API")
-        except Exception:
-            logger.exception("Error")
 
 
 @handlers.add(content_type=Content.TEXT, rule=Contains("hi"))
@@ -50,16 +34,15 @@ async def webhook_handle(request):
 
 @async_generator
 async def init_bot(app: web.Application):
-    client = MyClient(TOKEN, timeout=ClientTimeout(total=5))
-    bot = Bot(client, handlers)
+    bot = Bot(Client(TOKEN), handlers)
     await bot.initialize(webhook=True)
-    await client.set_webhook("https://{}:{}/{}".format(HOST, PORT, TOKEN), certificate=SSL_PUBLIC_KEY)
+    await bot.client.set_webhook("https://{}:{}/{}".format(HOST, PORT, TOKEN), certificate=SSL_PUBLIC_KEY)
 
     app["bot"] = bot
 
     await yield_()
 
-    await client.delete_webhook()
+    await bot.client.delete_webhook()
     await bot.close()
     await bot.client.close()
 
