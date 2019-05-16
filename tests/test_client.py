@@ -1,11 +1,19 @@
 import json
 
-import aiohttp
 import asynctest
 import pytest
-from aioresponses import aioresponses
 
 from aiotelegrambot import Client
+
+
+@pytest.fixture
+def response(mocker):
+    def make(status: int, data: dict):
+        result = mocker.MagicMock()
+        result.status = status
+        result.text = asynctest.CoroutineMock(return_value=json.dumps(data))
+        return result
+    return make
 
 
 def test_base_url():
@@ -20,7 +28,7 @@ def test___init__(mocker):
 
     assert client._url == "https://api.telegram.org/botTOKEN/"
     assert client._session == mock_client_session.return_value
-    mock_client_timeout.assert_called_once_with(total=1)
+    mock_client_timeout.assert_called_once_with(total=10)
     mock_client_session.assert_called_once_with(timeout=mock_client_timeout.return_value)
 
 
@@ -55,10 +63,10 @@ async def test_get_updates(mocker, param):
 
     if param:
         assert await client.get_updates(**{param: 1}) == mock_request.return_value
-        mock_request.assert_called_once_with("get", "getUpdates", params={param: 1})
+        mock_request.assert_called_once_with("get", "getUpdates", raise_exception=True, params={param: 1})
     else:
         assert await client.get_updates() == mock_request.return_value
-        mock_request.assert_called_once_with("get", "getUpdates", params={})
+        mock_request.assert_called_once_with("get", "getUpdates", raise_exception=True, params={})
 
 
 async def test_send_message(mocker):
@@ -129,32 +137,38 @@ async def test_delete_webhook(mocker):
     mock_request.assert_called_once_with("get", "deleteWebhook")
 
 
-@pytest.mark.parametrize("data", [{"ok": [1]}, {"ok": []}])
-async def test_request(mocker, data):
-    mock_error = mocker.patch("aiotelegrambot.client.logger.error")
+@pytest.mark.parametrize("data", [{"ok": True}, {"ok": False, "description": "error"}])
+async def test__request(mocker, data, response):
+    status = 200
+    mock_response = response(status, data)
+    mock_process_error = mocker.patch("aiotelegrambot.Client.process_error")
+    mocker.patch("aiohttp.ClientSession._request", new=asynctest.CoroutineMock(return_value=mock_response))
+
     client = Client("TOKEN")
 
-    with aioresponses() as m:
-        m.get(client._url + "getUpdates", payload=data)
-
-        assert await client.request("get", "getUpdates") == (data if data["ok"] else None)
-        if not data["ok"]:
-            mock_error.assert_called_once_with("Unsuccessful request", extra=data)
+    assert await client._request("get", "getUpdates", False) == (data if data["ok"] is True else None)
+    if data["ok"] is False:
+        mock_process_error.assert_called_once_with("Unsuccessful request", mock_response, data, False)
 
 
-@pytest.mark.parametrize("status", [400, 500])
-async def test_request_error(mocker, status):
-    mock_error = mocker.patch("aiotelegrambot.client.logger.error")
+@pytest.mark.parametrize("status", [501, 500, 401, 400])
+async def test__request_error(mocker, status, response):
+    mock_process_error = mocker.patch("aiotelegrambot.Client.process_error")
+
+    mock_description = "error"
+    data = {"ok": False, "description": mock_description}
+    mock_response = response(status, data)
+    mocker.patch("aiohttp.ClientSession._request", new=asynctest.CoroutineMock(return_value=mock_response))
+
     client = Client("TOKEN")
 
-    data = {"ok": [1]}
-    with aioresponses() as m:
-        m.get(client._url + "getUpdates", status=status, payload=data)
+    assert await client._request("get", "getUpdates", False) is None
+    if status >= 500:
+        msg = "Server error"
+        data = None
+    elif status == 401:
+        msg = "Invalid access token provided"
+    else:
+        msg = "Unexpected behavior"
 
-        if status == 500:
-            with pytest.raises(aiohttp.ClientResponseError):
-                await client.request("get", "getUpdates")
-            mock_error.assert_called_once_with("Status: 500", extra=json.dumps(data))
-        else:
-            assert await client.request("get", "getUpdates") is None
-            mock_error.assert_called_once_with("Status: 400", extra=json.dumps(data))
+    mock_process_error.assert_called_once_with(msg, mock_response, data, False)
