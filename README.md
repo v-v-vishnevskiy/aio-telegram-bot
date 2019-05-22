@@ -6,7 +6,10 @@ An asynchronous framework for building your own Telegram Bot over [API](https://
 
 
 ## Installation
-`aio-telegram-bot` requires Python 3.5.3+
+`aio-telegram-bot` requires Python 3.5.3+ and is available on PyPI:
+```
+$ pip install aio-telegram-bot
+```
 
 \*_Compatible with PyPy3.5-6.0.0+_
 
