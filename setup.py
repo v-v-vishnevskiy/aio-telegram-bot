@@ -34,6 +34,7 @@ setup(
     },
     description="An asynchronous framework for building your own Telegram Bot",
     long_description=readme,
+    long_description_content_type="text/markdown",
     classifiers=[
         "Development Status :: 4 - Beta",
         "Environment :: Console",
@@ -54,7 +55,7 @@ setup(
         "Topic :: Software Development :: Libraries :: Python Modules"
     ],
     license="MIT",
-    keywords=["aio", "async", "telegram", "bot"],
+    keywords=["aio", "async", "asyncio", "telegram", "bot"],
     packages=["aiotelegrambot"],
     provides=["aiotelegrambot"],
     python_requires=">=3.5.3",
