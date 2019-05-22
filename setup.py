@@ -1,7 +1,7 @@
 import os
 import sys
-from setuptools import setup
 
+from setuptools import setup
 
 if sys.version_info < (3, 5, 3):
     raise RuntimeError("aio-telegram-bot requires Python 3.5.3+")
@@ -11,7 +11,7 @@ with open(os.path.join(os.path.dirname(__file__), "aiotelegrambot", "__init__.py
     for line in f:
         if line.startswith("__version__ ="):
             _, _, version = line.partition("=")
-            VERSION = version.strip(" \n'\'")
+            VERSION = version.strip(" \n'\"")
             break
     else:
         raise RuntimeError("Unable to read the version from aiotelegrambot/__init__.py")

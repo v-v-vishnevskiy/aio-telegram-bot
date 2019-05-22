@@ -8,4 +8,6 @@ venv
 .venv
 coverage.xml
 tmp/
+build/
+dist/
 todo.txt
