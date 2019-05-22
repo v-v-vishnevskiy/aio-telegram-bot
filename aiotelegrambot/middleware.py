@@ -14,20 +14,20 @@ def _append_middleware(middleware: Callable, prev_middleware: Callable) -> Calla
 
 class Middlewares:
     def __init__(self):
-        self.__middleware = None
+        self._middleware = None
 
     def append(self, fn: Callable):
-        if self.__middleware is None:
-            self.__middleware = fn
+        if self._middleware is None:
+            self._middleware = fn
         else:
-            self.__middleware = _append_middleware(fn, self.__middleware)
+            self._middleware = _append_middleware(fn, self._middleware)
 
     def extend(self, *fns: Callable):
         for fn in fns:
             self.append(fn)
 
     async def __call__(self, message: Message, handler: Handler):
-        if self.__middleware:
-            await self.__middleware(message, handler)
+        if self._middleware:
+            await self._middleware(message, handler)
         else:
             await handler(message)

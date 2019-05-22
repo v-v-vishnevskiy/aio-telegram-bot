@@ -139,7 +139,7 @@ async def test_process_update(mocker, bot):
 
     mock_recognize_type.assert_called_once_with(data)
     bot.handlers.get.assert_called_once_with(mock_chat_type, mock_incoming, mock_content_type, data)
-    mock_message.assert_called_once_with(bot.client, data, mock_chat_type, mock_incoming, mock_content_type)
+    mock_message.assert_called_once_with(bot.client, data, bot.ctx, mock_chat_type, mock_incoming, mock_content_type)
     bot.middlewares.assert_called_once_with(mock_message.return_value, bot.handlers.get.return_value)
     mock_spawn.assert_called_once_with(bot.middlewares.return_value)
 

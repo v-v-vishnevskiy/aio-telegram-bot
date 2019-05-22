@@ -23,6 +23,7 @@ class Bot:
         self._scheduler = None
         self._closed = True
         self._update_id = 0
+        self.ctx = {}
 
     async def initialize(self, *, webhook: bool = False, interval: float = 0.1, **scheduler_options):
         if self._closed is False:
@@ -60,7 +61,7 @@ class Bot:
         chat_type, incoming, content_type = recognize_type(data)
         handler = self.handlers.get(chat_type, incoming, content_type, data)
         await self._scheduler.spawn(
-            self.middlewares(Message(self.client, data, chat_type, incoming, content_type), handler)
+            self.middlewares(Message(self.client, data, self.ctx, chat_type, incoming, content_type), handler)
         )
 
     async def _get_updates(self, interval: float):

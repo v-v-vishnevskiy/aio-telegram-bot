@@ -68,8 +68,11 @@ class Client:
     async def delete_webhook(self) -> Optional[dict]:
         return await self.request("get", "deleteWebhook")
 
-    async def send_message(self, text: str, chat_id: Union[int, str]):
-        await self.request("get", "sendMessage", params={"chat_id": chat_id, "text": text})
+    async def send_message(self, text: str, chat_id: Union[int, str], reply_to_message_id: Optional[int] = None):
+        params = {"chat_id": chat_id, "text": text}
+        if reply_to_message_id:
+            params["reply_to_message_id"] = reply_to_message_id
+        await self.request("get", "sendMessage", params=params)
 
     async def request(self, method: str, api: str, raise_exception: bool = None, **kwargs) -> Optional[dict]:
         raise_exception = raise_exception if raise_exception is not None else self.raise_exceptions

@@ -24,7 +24,7 @@ from aiotelegrambot.rules import Contains
 
 
 async def hi(message: Message):
-    await message.send_message("Hello!")
+    await message.send_message("Hello!", True)
 
 
 async def run(bot: Bot):

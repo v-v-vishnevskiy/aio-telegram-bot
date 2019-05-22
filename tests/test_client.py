@@ -69,16 +69,28 @@ async def test_get_updates(mocker, param):
         mock_request.assert_called_once_with("get", "getUpdates", raise_exception=True, params={})
 
 
-async def test_send_message(mocker):
+@pytest.mark.parametrize("has_message", [True, False])
+async def test_send_message(mocker, has_message):
     mocker.patch("aiohttp.ClientSession")
     mock_request = mocker.patch("aiotelegrambot.Client.request", new=asynctest.CoroutineMock())
     client = Client("TOKEN")
 
     mock_text = mocker.MagicMock()
     mock_chat_id = mocker.MagicMock()
+    if has_message:
+        mock_message_id = mocker.MagicMock()
+    else:
+        mock_message_id = None
 
-    await client.send_message(mock_text, mock_chat_id)
-    mock_request.assert_called_once_with("get", "sendMessage", params={"chat_id": mock_chat_id, "text": mock_text})
+    await client.send_message(mock_text, mock_chat_id, mock_message_id)
+    if has_message:
+        mock_request.assert_called_once_with(
+            "get",
+            "sendMessage",
+            params={"chat_id": mock_chat_id, "text": mock_text, "reply_to_message_id": mock_message_id}
+        )
+    else:
+        mock_request.assert_called_once_with("get", "sendMessage", params={"chat_id": mock_chat_id, "text": mock_text})
 
 
 async def test_set_webhook(mocker):
