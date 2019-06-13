@@ -13,6 +13,10 @@ $ pip install aio-telegram-bot
 
 \*_Compatible with PyPy3.5-6.0.0+_
 
+[![Downloads](https://pepy.tech/badge/aio-telegram-bot)](https://pepy.tech/project/aio-telegram-bot)
+[![Downloads](https://pepy.tech/badge/aio-telegram-bot/month)](https://pepy.tech/project/aio-telegram-bot/month)
+[![Downloads](https://pepy.tech/badge/aio-telegram-bot/week)](https://pepy.tech/project/aio-telegram-bot/week)
+
 
 ## Examples
 
