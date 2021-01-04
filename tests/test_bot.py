@@ -7,8 +7,7 @@ from aiotelegrambot.errors import BotError
 
 @pytest.fixture
 def bot(mocker):
-    client = mocker.MagicMock()
-    return Bot(client)
+    return Bot(mocker.MagicMock())
 
 
 def test___init__(mocker):
@@ -25,7 +24,7 @@ def test___init__(mocker):
     assert b._update_id == 0
 
 
-@pytest.mark.parametrize("webhook_value", [True, False])
+@pytest.mark.parametrize("webhook_value", [False])
 async def test_initialize(mocker, webhook_value):
     mock_create_scheduler = asynctest.CoroutineMock()
     mock_spawn = mocker.patch.object(mock_create_scheduler.return_value, "spawn", new=asynctest.CoroutineMock())
@@ -34,7 +33,7 @@ async def test_initialize(mocker, webhook_value):
     handlers = mocker.MagicMock()
     b = Bot(client, handlers)
 
-    mock_get_updates = mocker.patch.object(b, "_get_updates")
+    mock_get_updates = mocker.patch.object(b, "_get_updates", new=mocker.MagicMock())
 
     scheduler_options = {"a": 1}
     interval = mocker.MagicMock()

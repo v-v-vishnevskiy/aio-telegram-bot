@@ -3,8 +3,8 @@ import sys
 
 from setuptools import setup
 
-if sys.version_info < (3, 5, 3):
-    raise RuntimeError("aio-telegram-bot requires Python 3.5.3+")
+if sys.version_info < (3, 7, 0):
+    raise RuntimeError("aio-telegram-bot requires Python 3.7.0+")
 
 
 with open(os.path.join(os.path.dirname(__file__), "aiotelegrambot", "__init__.py")) as f:
@@ -17,7 +17,7 @@ with open(os.path.join(os.path.dirname(__file__), "aiotelegrambot", "__init__.py
         raise RuntimeError("Unable to read the version from aiotelegrambot/__init__.py")
 
 
-with open(os.path.join(os.path.dirname(__file__), 'README.md')) as f:
+with open(os.path.join(os.path.dirname(__file__), "README.md")) as f:
     readme = f.read()
 
 
@@ -25,7 +25,7 @@ setup(
     name="aio-telegram-bot",
     version=VERSION,
     author="Valery Vishnevskiy",
-    author_email="v.v.vishnevskiy@gmail.com",
+    author_email="v.v.vishnevskiy@yandex.ru",
     url="https://github.com/v-v-vishnevskiy/aio-telegram-bot",
     project_urls={
         "CI: Travis": "https://travis-ci.org/v-v-vishnevskiy/aio-telegram-bot",
@@ -45,9 +45,9 @@ setup(
         "Operating System :: MacOS :: MacOS X",
         "Operating System :: Microsoft :: Windows",
         "Programming Language :: Python :: 3 :: Only",
-        "Programming Language :: Python :: 3.5",
-        "Programming Language :: Python :: 3.6",
         "Programming Language :: Python :: 3.7",
+        "Programming Language :: Python :: 3.8",
+        "Programming Language :: Python :: 3.9",
         "Programming Language :: Python :: Implementation :: PyPy",
         "Topic :: Communications :: Chat",
         "Topic :: Internet :: WWW/HTTP",
@@ -57,6 +57,6 @@ setup(
     keywords=["aio", "async", "asyncio", "telegram", "bot"],
     packages=["aiotelegrambot"],
     provides=["aiotelegrambot"],
-    python_requires=">=3.5.3",
-    install_requires=["aiohttp==3.5.4", "aiojobs==0.2.2"],
+    python_requires=">=3.7.0",
+    install_requires=["aiohttp==3.7.3", "aiojobs==0.3.0"],
 )

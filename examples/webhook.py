@@ -4,7 +4,6 @@ import os
 import ssl
 
 from aiohttp import web
-from async_generator import async_generator, yield_
 
 from aiotelegrambot import Bot, Client, Content, Handlers, Message
 from aiotelegrambot.rules import Contains
@@ -32,15 +31,14 @@ async def webhook_handle(request):
     return web.Response()
 
 
-@async_generator
 async def init_bot(app: web.Application):
     bot = Bot(Client(TOKEN), handlers)
     await bot.initialize(webhook=True)
-    await bot.client.set_webhook("https://{}:{}/{}".format(HOST, PORT, TOKEN), certificate=SSL_PUBLIC_KEY)
+    await bot.client.set_webhook(f"https://{HOST}:{PORT}/{TOKEN}", certificate=SSL_PUBLIC_KEY)
 
     app["bot"] = bot
 
-    await yield_()
+    yield
 
     await bot.client.delete_webhook()
     await bot.close()
@@ -48,7 +46,7 @@ async def init_bot(app: web.Application):
 
 
 app = web.Application()
-app.router.add_post("/{}".format(TOKEN), webhook_handle)
+app.router.add_post(f"/{TOKEN}", webhook_handle)
 app.cleanup_ctx.extend([init_bot])
 
 context = ssl.create_default_context(ssl.Purpose.CLIENT_AUTH)
