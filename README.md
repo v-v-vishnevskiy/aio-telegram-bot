@@ -11,8 +11,6 @@ An asynchronous framework for building your own Telegram Bot over [API](https://
 $ pip install aio-telegram-bot
 ```
 
-\*_Compatible with PyPy3.7-7.3.3+_
-
 [![Downloads](https://pepy.tech/badge/aio-telegram-bot)](https://pepy.tech/project/aio-telegram-bot)
 [![Downloads](https://pepy.tech/badge/aio-telegram-bot/month)](https://pepy.tech/project/aio-telegram-bot/month)
 [![Downloads](https://pepy.tech/badge/aio-telegram-bot/week)](https://pepy.tech/project/aio-telegram-bot/week)
