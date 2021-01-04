@@ -13,6 +13,7 @@ def response(mocker):
         result.status = status
         result.text = asynctest.CoroutineMock(return_value=json.dumps(data))
         return result
+
     return make
 
 
@@ -35,14 +36,16 @@ def test___init__(mocker):
 def test__init___kwargs(mocker):
     token = "TOKEN"
     mock_client_session = mocker.patch("aiohttp.ClientSession")
+    mock_client_timeout = mocker.patch("aiohttp.ClientTimeout")
 
     mock_json_loads = mocker.MagicMock()
-    mock_timeout = mocker.MagicMock()
     mock_json_serialize = mocker.MagicMock()
-    client = Client(token, json_loads=mock_json_loads, timeout=mock_timeout, json_serialize=mock_json_serialize)
+    client = Client(token, json_loads=mock_json_loads, json_serialize=mock_json_serialize)
 
     assert client._json_loads is mock_json_loads
-    mock_client_session.assert_called_once_with(timeout=mock_timeout, json_serialize=mock_json_serialize)
+    mock_client_session.assert_called_once_with(
+        timeout=mock_client_timeout.return_value, json_serialize=mock_json_serialize
+    )
 
 
 async def test_close(mocker):
@@ -87,7 +90,7 @@ async def test_send_message(mocker, has_message):
         mock_request.assert_called_once_with(
             "get",
             "sendMessage",
-            params={"chat_id": mock_chat_id, "text": mock_text, "reply_to_message_id": mock_message_id}
+            params={"chat_id": mock_chat_id, "text": mock_text, "reply_to_message_id": mock_message_id},
         )
     else:
         mock_request.assert_called_once_with("get", "sendMessage", params={"chat_id": mock_chat_id, "text": mock_text})
@@ -120,9 +123,9 @@ async def test_set_webhook_kwargs(mocker):
         "params": [
             ("url", mock_url),
             ("max_connections", mock_max_connections),
-            ("allowed_updates", mock_dumps.return_value)
+            ("allowed_updates", mock_dumps.return_value),
         ],
-        "data": {"certificate": mock_open.return_value}
+        "data": {"certificate": mock_open.return_value},
     }
 
     await client.set_webhook(mock_url, mock_certificate, mock_max_connections, mock_allowed_updates)

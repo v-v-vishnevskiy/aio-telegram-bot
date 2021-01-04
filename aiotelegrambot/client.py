@@ -18,22 +18,19 @@ class Client:
         self.raise_exceptions = raise_exceptions
         self._json_loads = json_loads
 
-        session_kwargs = {
-            "timeout": aiohttp.ClientTimeout(total=10)
-        }
-        session_kwargs.update(kwargs)
+        kwargs["timeout"] = aiohttp.ClientTimeout(total=kwargs.get("timeout", 10))
 
         self._json_loads = json_loads
-        self._session = aiohttp.ClientSession(**session_kwargs)
+        self._session = aiohttp.ClientSession(**kwargs)
 
     async def close(self):
         await self._session.close()
 
     async def get_updates(
-            self,
-            offset: Optional[Union[int, str]] = None,
-            limit: Optional[Union[int, str]] = None,
-            timeout: Optional[Union[int, str]] = None
+        self,
+        offset: Optional[Union[int, str]] = None,
+        limit: Optional[Union[int, str]] = None,
+        timeout: Optional[Union[int, str]] = None,
     ) -> Optional[dict]:
         params = {}
         if offset:
@@ -45,15 +42,13 @@ class Client:
         return await self.request("get", "getUpdates", raise_exception=True, params=params)
 
     async def set_webhook(
-            self,
-            url: str,
-            certificate: Optional[str] = None,
-            max_connections: Optional[int] = None,
-            allowed_updates: Optional[List[str]] = None
+        self,
+        url: str,
+        certificate: Optional[str] = None,
+        max_connections: Optional[int] = None,
+        allowed_updates: Optional[List[str]] = None,
     ) -> Optional[dict]:
-        kwargs = {
-            "params": [("url", url)]
-        }
+        kwargs = {"params": [("url", url)]}
         if certificate:
             kwargs["data"] = {"certificate": open(certificate, "r")}
         if max_connections is not None:
