@@ -58,5 +58,5 @@ setup(
     packages=["aiotelegrambot"],
     provides=["aiotelegrambot"],
     python_requires=">=3.7.0",
-    install_requires=["aiohttp==3.7.3", "aiojobs==0.3.0"],
+    install_requires=["aiohttp==3.7.4", "aiojobs==0.3.0"],
 )
